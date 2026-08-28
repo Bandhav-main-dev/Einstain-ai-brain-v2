@@ -84,3 +84,56 @@ Authentication is intentionally deferred to Phase 0.6.6.
 Next:
 
 **Phase 0.6.5 — Professor Dashboard**
+
+
+
+## Phase 0.6.5 — Professor/Test Dashboard + Secure Authentication
+
+Phase 0.6.5 adds a protected Professor/Test monitoring dashboard.
+
+### Components
+
+- `monitor/auth.py`
+  - Password hashing
+  - Salted PBKDF2 verification
+  - Streamlit session authentication
+  - Role-based access checks
+  - Logout support
+
+- `monitor/professor_dashboard.py`
+  - Project-state display
+  - Monitoring-event display
+  - Progress visualization
+  - Test-suite execution
+  - Professor-only access
+
+- `tests/test_auth.py`
+  - Password verification tests
+
+- `tests/test_professor_dashboard.py`
+  - Dashboard data-loader tests
+
+### Security
+
+Authentication credentials are intended to be stored in Streamlit
+secrets and must not be committed to Git.
+
+Example Streamlit secret structure:
+
+```toml
+[users.professor]
+role = "professor"
+salt = "GENERATED_SALT"
+password_hash = "GENERATED_PASSWORD_HASH"
+```
+
+Never place a real password or Personal Access Token in source code.
+
+### Validation
+
+Phase 0.6.5 must pass:
+
+- Ruff
+- Pytest
+- Einstein V2 entry point
+- Streamlit import validation

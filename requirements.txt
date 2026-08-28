@@ -49,3 +49,5 @@ mypy
 # Notebook / Colab
 ipykernel
 jupyter
+openpyxl>=3,<4
+joblib>=1,<2
