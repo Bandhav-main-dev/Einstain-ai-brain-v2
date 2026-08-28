@@ -1,0 +1,25 @@
+# ============================================================
+# Einstein AI V2 — Base Configuration
+# ============================================================
+
+project:
+  name: "Einstein AI V2"
+  version: "0.1.0"
+  environment: "development"
+
+architecture:
+  cognitive_modules: 20
+  memory_systems: 6
+  evaluation_dimensions: 10
+  biological_reconstruction_claim: false
+
+development:
+  branch_model: "feature -> dev -> qa -> main"
+  testing_required: true
+  pull_request_required: true
+
+paths:
+  data: "data"
+  models: "models"
+  artifacts: "artifacts"
+  logs: "logs"
