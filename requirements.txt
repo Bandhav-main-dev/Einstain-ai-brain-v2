@@ -1,0 +1,24 @@
+# ============================================================
+# Einstein AI V2 — Core Dependencies
+# ============================================================
+
+numpy
+pandas
+scikit-learn
+pydantic
+pyyaml
+
+# Testing
+pytest
+pytest-cov
+
+# Code quality
+ruff
+mypy
+
+# Monitoring
+streamlit
+
+# Notebook / Colab
+ipython
+jupyter
