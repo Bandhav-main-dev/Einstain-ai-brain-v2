@@ -30,3 +30,23 @@ Monitoring components will later power:
 
 The monitoring system is designed to read project activity from
 structured logs rather than relying on manually maintained status text.
+
+## Phase 0.6.3 — Monitoring Progress Engine
+
+The Einstein AI V2 monitoring system now includes a structured progress
+engine capable of tracking:
+
+- overall project progress
+- active and completed engineering steps
+- individual step progress
+- test results
+- warnings and errors
+- dashboard-ready project summaries
+- progress events
+
+Implementation:
+
+- `monitor/progress.py`
+- `tests/test_monitoring_progress.py`
+
+Phase 0.6.3 status: **IMPLEMENTED**

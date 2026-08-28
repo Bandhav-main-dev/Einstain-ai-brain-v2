@@ -1,10 +1,15 @@
 from .logging_core import log_event, read_events
-from .progress import get_progress_summary, record_progress
+from .progress import (
+    calculate_overall_progress,
+    calculate_step_progress,
+    get_progress_summary,
+    record_test_result,
+    update_step,
+)
+from .project_state import load_state, save_state
 from .schema import (
     ProjectEvent,
     ProjectState,
-    event_to_json,
-    state_to_json,
     validate_project_event,
     validate_project_state,
 )
@@ -12,12 +17,15 @@ from .schema import (
 __all__ = [
     "ProjectEvent",
     "ProjectState",
-    "event_to_json",
+    "calculate_overall_progress",
+    "calculate_step_progress",
     "get_progress_summary",
+    "load_state",
     "log_event",
     "read_events",
-    "record_progress",
-    "state_to_json",
+    "record_test_result",
+    "save_state",
+    "update_step",
     "validate_project_event",
     "validate_project_state",
 ]
