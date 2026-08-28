@@ -1,53 +1,24 @@
 # ============================================================
-# EINSTEIN AI V2 — PROJECT DEPENDENCIES
+# Einstein AI V2 — Core Dependencies
 # ============================================================
 
-# Core scientific / data processing
 numpy
 pandas
-scipy
 scikit-learn
+pydantic
+pyyaml
 
-# Machine learning / deep learning
-torch
-transformers
-datasets
-accelerate
-sentence-transformers
-
-# Natural language processing
-nltk
-spacy
-
-# Document / PDF processing
-pypdf
-pdfplumber
-beautifulsoup4
-lxml
-
-# HTTP / web acquisition
-requests
-httpx
-
-# Configuration / serialization
-PyYAML
-python-dotenv
-
-# Monitoring / dashboards
-streamlit
-plotly
-
-# Visualization
-matplotlib
-
-# Development / testing
+# Testing
 pytest
 pytest-cov
+
+# Code quality
 ruff
 mypy
 
+# Monitoring
+streamlit
+
 # Notebook / Colab
-ipykernel
+ipython
 jupyter
-openpyxl>=3,<4
-joblib>=1,<2
