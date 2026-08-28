@@ -50,3 +50,37 @@ Implementation:
 - `tests/test_monitoring_progress.py`
 
 Phase 0.6.3 status: **IMPLEMENTED**
+
+
+## Phase 0.6.4 — Owner Dashboard
+
+Status: **IMPLEMENTED**
+
+The monitoring system now includes the first Owner Dashboard foundation.
+
+### Owner Dashboard Features
+
+- Streamlit-based monitoring interface
+- Bleach-inspired dark visual theme
+- Overall project progress
+- Current engineering phase and step
+- Project-state inspection
+- Recent event-log display
+- Testing counters
+- Warning/error counters
+- Git branch and commit visibility
+- Working-tree status
+- Raw project-state inspection
+- Raw event-log inspection
+- Manual dashboard refresh
+
+Implementation:
+
+- `monitor/owner_dashboard.py`
+- `tests/test_owner_dashboard.py`
+
+Authentication is intentionally deferred to Phase 0.6.6.
+
+Next:
+
+**Phase 0.6.5 — Professor Dashboard**
