@@ -2,24 +2,31 @@
 
 ## Monitoring System
 
-Einstein AI V2 includes a structured monitoring foundation for
-tracking engineering progress, testing results, project state, and
-future dashboard activity.
+Einstein AI V2 includes a structured monitoring subsystem designed
+to provide transparent engineering progress tracking.
 
-Current monitoring components:
+### Phase 0.6.2
 
-- `logs/project_events.jsonl`
-- `logs/project_state.json`
-- `monitor/logging_core.py`
-- `monitor/project_state.py`
-- `monitor/progress.py`
+Implemented:
 
-The monitoring architecture will later support:
+- Canonical `ProjectState` schema
+- Immutable `ProjectEvent` schema
+- Step status model
+- Event severity model
+- Progress validation
+- JSON serialization
+- Monitoring state validation
+- Monitoring schema tests
+- Structured project-state metadata
+- Audit-event metadata
 
-- Owner dashboard
-- Professor dashboard
-- Authentication
-- Step-by-step progress tracking
-- Testing output visualization
-- Project activity history
-- Streamlit monitoring interface
+Monitoring components will later power:
+
+1. Owner dashboard
+2. Professor dashboard
+3. Authentication
+4. Testing/result visualization
+5. Streamlit monitoring interface
+
+The monitoring system is designed to read project activity from
+structured logs rather than relying on manually maintained status text.
