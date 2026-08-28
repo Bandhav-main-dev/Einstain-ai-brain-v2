@@ -1,45 +1,161 @@
+from __future__ import annotations
+
+import json
+
 from monitor import owner_dashboard
 
 
-def test_load_project_state():
-    state = owner_dashboard.load_project_state()
+def test_load_state_missing_file(tmp_path, monkeypatch):
+    state_file = tmp_path / "project_state.json"
 
-    assert isinstance(state, dict)
-    assert state.get("project") == "Einstein AI V2"
+    monkeypatch.setattr(
+        owner_dashboard,
+        "STATE_FILE",
+        state_file,
+    )
+
+    assert owner_dashboard.load_state() == {}
 
 
-def test_load_events():
-    events = owner_dashboard.load_events()
+def test_load_state_valid_file(tmp_path, monkeypatch):
+    state_file = tmp_path / "project_state.json"
 
-    assert isinstance(events, list)
+    state_file.write_text(
+        json.dumps(
+            {
+                "project": "Einstein AI V2",
+                "current_phase": "0.6.4-U1",
+                "progress_percent": 25.0,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        owner_dashboard,
+        "STATE_FILE",
+        state_file,
+    )
+
+    state = owner_dashboard.load_state()
+
+    assert state["project"] == "Einstein AI V2"
+    assert state["current_phase"] == "0.6.4-U1"
+    assert state["progress_percent"] == 25.0
 
 
-def test_recent_events():
+def test_load_state_invalid_json(tmp_path, monkeypatch):
+    state_file = tmp_path / "project_state.json"
+
+    state_file.write_text(
+        "{invalid-json",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        owner_dashboard,
+        "STATE_FILE",
+        state_file,
+    )
+
+    assert owner_dashboard.load_state() == {}
+
+
+def test_load_events_missing_file(tmp_path, monkeypatch):
+    event_file = tmp_path / "project_events.jsonl"
+
+    monkeypatch.setattr(
+        owner_dashboard,
+        "EVENT_FILE",
+        event_file,
+    )
+
+    assert owner_dashboard.load_events() == []
+
+
+def test_load_events_valid_jsonl(tmp_path, monkeypatch):
+    event_file = tmp_path / "project_events.jsonl"
+
     events = [
-        {"message": "event 1"},
-        {"message": "event 2"},
-        {"message": "event 3"},
+        {
+            "event_type": "PHASE_START",
+            "message": "Phase started",
+        },
+        {
+            "event_type": "TEST_PASS",
+            "message": "Tests passed",
+        },
     ]
 
-    recent = owner_dashboard.get_recent_events(
-        events,
-        limit=2,
+    event_file.write_text(
+        "\n".join(json.dumps(item) for item in events),
+        encoding="utf-8",
     )
 
-    assert len(recent) == 2
-    assert recent[0]["message"] == "event 3"
-    assert recent[1]["message"] == "event 2"
+    monkeypatch.setattr(
+        owner_dashboard,
+        "EVENT_FILE",
+        event_file,
+    )
+
+    loaded = owner_dashboard.load_events()
+
+    assert len(loaded) == 2
+    assert loaded[0]["event_type"] == "TEST_PASS"
+    assert loaded[1]["event_type"] == "PHASE_START"
 
 
-def test_progress_value_is_available():
-    state = owner_dashboard.load_project_state()
+def test_load_events_ignores_invalid_lines(tmp_path, monkeypatch):
+    event_file = tmp_path / "project_events.jsonl"
 
-    progress = float(
-        state.get(
-            "overall_progress",
-            state.get("progress_percent", 0.0),
+    event_file.write_text(
+        "\n".join(
+            [
+                json.dumps(
+                    {
+                        "event_type": "VALID",
+                    }
+                ),
+                "{invalid",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        owner_dashboard,
+        "EVENT_FILE",
+        event_file,
+    )
+
+    loaded = owner_dashboard.load_events()
+
+    assert len(loaded) == 1
+    assert loaded[0]["event_type"] == "VALID"
+
+
+def test_git_info_returns_expected_keys():
+    info = owner_dashboard.git_info()
+
+    assert "branch" in info
+    assert "commit" in info
+    assert "status" in info
+
+
+def test_dashboard_file_contains_landscape_configuration():
+    source = owner_dashboard.OWNER_FILE.read_text(
+        encoding="utf-8"
+    ) if hasattr(owner_dashboard, "OWNER_FILE") else (
+        owner_dashboard.__file__
+    )
+
+    if isinstance(source, str) and source.endswith(".py"):
+        from pathlib import Path
+
+        source = Path(source).read_text(
+            encoding="utf-8"
         )
-        or 0.0
-    )
 
-    assert 0.0 <= progress <= 100.0
+    assert "layout=\"wide\"" in source
+    assert "OWNER COMMAND CENTER" in source
+    assert "SYSTEM TELEMETRY" in source

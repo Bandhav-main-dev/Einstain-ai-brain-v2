@@ -137,3 +137,25 @@ Phase 0.6.5 must pass:
 - Pytest
 - Einstein V2 entry point
 - Streamlit import validation
+
+## Phase 0.6.4-U1 — Owner Dashboard UI Overhaul
+
+The Einstein AI V2 monitoring Owner Dashboard now includes:
+
+- Wide landscape Streamlit layout
+- Soul-Society-inspired dark command-center styling
+- Animated ambient interface effects
+- System telemetry cards
+- Overall project progress visualization
+- Phase timeline
+- Monitoring event stream
+- Git branch and commit telemetry
+- Owner control panel
+- Controlled test-suite execution
+- Dashboard refresh controls
+- Responsive multi-column layout
+- Existing authentication and monitoring core preserved
+
+Phase 0.6.4-U1 is a UI enhancement layer and does not claim biological
+reconstruction of Einstein's brain.
+
