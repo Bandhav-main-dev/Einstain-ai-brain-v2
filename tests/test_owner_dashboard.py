@@ -160,7 +160,10 @@ def test_dashboard_file_contains_landscape_configuration():
     # The previous HTML/CSS telemetry marker is no longer required.
     assert "layout=\"wide\"" in source
     assert "OWNER COMMAND CENTER" in source
-    assert "Owner Monitoring Dashboard" in source
+    assert (
+        "Owner Monitoring Dashboard" in source
+        or "Owner Zanpakutō Command Center" in source
+    )
     assert "st.metric(" in source
     assert "st.progress(" in source
     assert "st.expander(" in source

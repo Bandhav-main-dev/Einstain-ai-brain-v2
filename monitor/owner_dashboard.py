@@ -466,11 +466,11 @@ def render_dashboard() -> None:
     # =====================================================================
 
     st.title(
-        "Einstein AI V2"
+        "⚔️ Einstein AI V2"
     )
 
     st.caption(
-        "Owner Monitoring Dashboard"
+        "⚔️ ZANPAKUTŌ COMMAND CENTER · OWNER MONITORING"
     )
 
     # =====================================================================
@@ -531,7 +531,7 @@ def render_dashboard() -> None:
     # =====================================================================
 
     st.header(
-        "Project Overview"
+        "⚔️ Project Overview"
     )
 
     col1, col2, col3, col4 = st.columns(4)
@@ -569,7 +569,7 @@ def render_dashboard() -> None:
     # =====================================================================
 
     st.header(
-        "Current Step"
+        "🔴 Current Mission"
     )
 
     if active_step:
@@ -589,7 +589,7 @@ def render_dashboard() -> None:
     # =====================================================================
 
     st.header(
-        "Roadmap"
+        "⚔️ Zanpakutō Roadmap"
     )
 
     if not steps:
@@ -620,7 +620,7 @@ def render_dashboard() -> None:
     # =====================================================================
 
     st.header(
-        "Project State"
+        "🜂 Project State"
     )
 
     if state:
@@ -662,7 +662,7 @@ def render_dashboard() -> None:
     # =====================================================================
 
     st.header(
-        "Recent Events"
+        "✨ Recent Reishi Events"
     )
 
     if events:
@@ -723,7 +723,7 @@ def render_dashboard() -> None:
     # =====================================================================
 
     st.header(
-        "Git Information"
+        "◆ Git Information"
     )
 
     if git:
@@ -784,7 +784,7 @@ def render_dashboard() -> None:
     # =====================================================================
 
     st.header(
-        "System Status"
+        "⚡ System Status"
     )
 
     status_col1, status_col2, status_col3 = st.columns(3)
