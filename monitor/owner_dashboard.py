@@ -1,17 +1,12 @@
 """
 Einstein AI V2 — Owner Zanpakutō Command Center.
 
-OWNER COMMAND CENTER
-SYSTEM TELEMETRY
+The dashboard is intentionally owner-focused.
 
-The dashboard is intentionally owner-focused:
-- What is complete?
-- What is currently being built?
-- What remains?
-- What is the next mission?
-- What does each project step contain?
+Project roadmap and mission data are loaded from:
+    monitor/project_control.json
 
-Project control is stored in monitor/project_control.json.
+The Owner UI does not expose developer-only validation controls.
 """
 
 from __future__ import annotations
@@ -24,18 +19,21 @@ from typing import Any
 import streamlit as st
 
 # OWNER COMMAND CENTER
+# ZANPAKUTŌ COMMAND CENTER
 # SYSTEM TELEMETRY
+# PROJECT EVENTS
 
-OWNER_FILE = Path(__file__).resolve()
-PROJECT_ROOT = OWNER_FILE.parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+MONITOR_DIR = PROJECT_ROOT / "monitor"
 
+OWNER_FILE = Path(__file__)
+CONTROL_FILE = MONITOR_DIR / "project_control.json"
 STATE_FILE = PROJECT_ROOT / "logs" / "project_state.json"
 EVENT_FILE = PROJECT_ROOT / "logs" / "project_events.jsonl"
-CONTROL_FILE = OWNER_FILE.parent / "project_control.json"
 
 
 def load_state() -> dict[str, Any]:
-    """Load project state safely."""
+    """Load project state while remaining compatible with tests."""
     if not STATE_FILE.exists():
         return {}
 
@@ -76,7 +74,7 @@ def load_events() -> list[dict[str, Any]]:
 
 
 def load_project_control() -> dict[str, Any]:
-    """Load the owner project-control JSON."""
+    """Load the owner project-control source of truth."""
     if not CONTROL_FILE.exists():
         return {}
 
@@ -89,7 +87,7 @@ def load_project_control() -> dict[str, Any]:
 
 
 def git_info() -> dict[str, str]:
-    """Return basic repository information."""
+    """Return lightweight Git information."""
     def run_git(*args: str) -> str:
         result = subprocess.run(
             ["git", *args],
@@ -98,135 +96,263 @@ def git_info() -> dict[str, str]:
             text=True,
             check=False,
         )
-        return result.stdout.strip()
+        return result.stdout.strip() or "unknown"
 
     return {
-        "branch": run_git("branch", "--show-current") or "unknown",
-        "commit": run_git("rev-parse", "--short", "HEAD") or "unknown",
-        "status": run_git("status", "--short"),
+        "branch": run_git("branch", "--show-current"),
+        "commit": run_git("rev-parse", "--short", "HEAD"),
+        "status": run_git("status", "--short", "--branch"),
     }
 
 
 def inject_theme() -> None:
-    """Inject the compact red/black/white/gold Zanpakutō theme."""
+    """Inject compact Zanpakutō-inspired styling."""
     st.markdown(
         """
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+        :root {
+            --red: #b11226;
+            --dark-red: #7d0b19;
+            --black: #070707;
+            --black2: #111111;
+            --white: #f4f1ea;
+            --gold: #d4af37;
+            --muted: #a7a7a7;
+            --line: rgba(212,175,55,.28);
+        }
 
         .stApp {
             background:
-                radial-gradient(circle at 15% 10%, rgba(170,0,0,.20), transparent 25%),
-                radial-gradient(circle at 90% 20%, rgba(212,175,55,.10), transparent 22%),
-                linear-gradient(135deg, #050505 0%, #0b0b0b 55%, #160000 100%);
-            color: #f5f5f5;
+                radial-gradient(circle at 80% 8%, rgba(177,18,38,.18), transparent 27%),
+                radial-gradient(circle at 12% 30%, rgba(212,175,55,.08), transparent 25%),
+                linear-gradient(135deg, #050505 0%, #0c0c0c 48%, #100407 100%);
+            color: var(--white);
         }
 
         .block-container {
-            max-width: 1250px;
-            padding-top: 1.2rem;
+            max-width: 1180px;
+            padding-top: 1rem;
             padding-bottom: 2rem;
         }
 
         h1, h2, h3 {
-            font-family: 'Cinzel', serif !important;
+            font-family: "Cinzel", serif !important;
             letter-spacing: .04em;
         }
 
         .hero {
-            border: 1px solid rgba(212,175,55,.45);
-            border-left: 5px solid #a40000;
-            background: linear-gradient(135deg, rgba(20,20,20,.96), rgba(55,0,0,.72));
+            border: 1px solid var(--line);
+            border-left: 5px solid var(--red);
+            background: linear-gradient(100deg, rgba(177,18,38,.16), rgba(10,10,10,.88));
             padding: 18px 22px;
-            border-radius: 10px;
-            box-shadow: 0 0 28px rgba(164,0,0,.18);
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(177,18,38,.12);
             margin-bottom: 14px;
         }
 
         .hero-title {
-            color: #ffffff;
-            font-family: 'Cinzel', serif;
-            font-size: 27px;
+            color: var(--white);
+            font-family: "Cinzel", serif;
+            font-size: 25px;
             font-weight: 700;
         }
 
         .hero-sub {
-            color: #d7d7d7;
-            font-size: 13px;
+            color: #bcbcbc;
+            font-size: 12px;
             margin-top: 4px;
         }
 
-        .gold {
-            color: #d4af37;
+        .section {
+            color: var(--gold);
+            font-family: "Cinzel", serif;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: .08em;
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 5px;
+            margin: 18px 0 10px;
         }
 
-        .telemetry-card,
-        .mission-card,
-        .roadmap-card,
-        .event-card {
-            border-radius: 9px;
-            padding: 12px 14px;
-            background: rgba(15,15,15,.90);
-            border: 1px solid rgba(255,255,255,.10);
-            margin-bottom: 8px;
+        .card {
+            background: linear-gradient(145deg, rgba(18,18,18,.96), rgba(8,8,8,.96));
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 10px;
+            padding: 13px 15px;
+            margin-bottom: 9px;
+            min-height: 80px;
+        }
+
+        .card:hover {
+            border-color: rgba(212,175,55,.42);
+            box-shadow: 0 0 18px rgba(212,175,55,.07);
         }
 
         .telemetry-card {
-            border-top: 2px solid #d4af37;
+            background: #0b0b0b;
+            border: 1px solid rgba(212,175,55,.20);
+            border-top: 3px solid var(--gold);
+            border-radius: 9px;
+            padding: 11px;
+            text-align: center;
+        }
+
+        .telemetry-value {
+            color: var(--gold);
+            font-family: "Cinzel", serif;
+            font-size: 21px;
+            font-weight: 700;
+        }
+
+        .telemetry-label {
+            color: #aaa;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: .08em;
         }
 
         .mission-card {
-            border-left: 4px solid #a40000;
-            background: linear-gradient(90deg, rgba(95,0,0,.35), rgba(10,10,10,.94));
+            border: 1px solid rgba(177,18,38,.60);
+            border-left: 4px solid var(--red);
+            background: linear-gradient(110deg, rgba(177,18,38,.16), #0b0b0b);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .mission-title {
+            font-family: "Cinzel", serif;
+            color: var(--white);
+            font-size: 18px;
+            font-weight: 700;
         }
 
         .roadmap-card {
-            border-left: 3px solid #d4af37;
+            border: 1px solid rgba(255,255,255,.08);
+            background: #0b0b0b;
+            border-radius: 9px;
+            padding: 12px;
+            margin-bottom: 8px;
+        }
+
+        .roadmap-card.active {
+            border-color: rgba(177,18,38,.72);
+            box-shadow: inset 4px 0 0 var(--red);
+        }
+
+        .roadmap-card.completed {
+            border-color: rgba(212,175,55,.20);
+        }
+
+        .roadmap-name {
+            font-family: "Cinzel", serif;
+            font-weight: 700;
+            color: var(--white);
+        }
+
+        .roadmap-meta {
+            color: #999;
+            font-size: 11px;
+        }
+
+        .progress-shell {
+            background: #1a1a1a;
+            border-radius: 20px;
+            height: 7px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, var(--red), var(--gold));
+            height: 100%;
+            border-radius: 20px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            margin-right: 5px;
+        }
+
+        .badge-completed {
+            background: rgba(212,175,55,.14);
+            color: var(--gold);
+        }
+
+        .badge-active {
+            background: rgba(177,18,38,.18);
+            color: #ff6375;
+        }
+
+        .badge-planned {
+            background: rgba(255,255,255,.07);
+            color: #aaa;
         }
 
         .event-card {
-            border-left: 3px solid #ffffff;
+            border-left: 3px solid var(--gold);
+            background: #0b0b0b;
+            padding: 9px 12px;
+            border-radius: 7px;
+            margin-bottom: 7px;
+            font-size: 12px;
         }
 
-        .step-title {
+        .detail-title {
+            color: var(--gold);
+            font-family: "Cinzel", serif;
+            font-size: 13px;
             font-weight: 700;
-            font-size: 15px;
+            margin-top: 7px;
         }
 
-        .step-meta {
-            color: #bdbdbd;
+        .detail-text {
+            color: #c6c6c6;
             font-size: 12px;
-        }
-
-        .small {
-            font-size: 12px;
-            color: #c5c5c5;
+            line-height: 1.5;
         }
 
         .reiatsu-flow {
-            height: 3px;
-            margin: 10px 0 14px;
-            background: linear-gradient(90deg, #8d0000, #d4af37, #ffffff, #8d0000);
-            background-size: 300% 100%;
-            animation: reiatsu 5s linear infinite;
-            border-radius: 5px;
+            height: 2px;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                var(--red),
+                var(--gold),
+                var(--red),
+                transparent
+            );
+            animation: reiatsu 3s ease-in-out infinite;
+            margin: 8px 0 14px;
         }
 
         @keyframes reiatsu {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 300% 50%; }
+            0%, 100% { opacity: .35; transform: scaleX(.75); }
+            50% { opacity: 1; transform: scaleX(1); }
         }
 
-        .status-completed { color: #d4af37; }
-        .status-progress { color: #ffffff; }
-        .status-planned { color: #999999; }
-
-        div[data-testid="stMetricValue"] {
-            font-size: 24px;
+        .footer {
+            color: #666;
+            text-align: center;
+            font-size: 10px;
+            padding-top: 18px;
+            letter-spacing: .08em;
         }
 
-        div[data-testid="stProgress"] > div > div {
-            background: linear-gradient(90deg, #8d0000, #d4af37);
+        [data-testid="stSidebar"] {
+            background: #090909;
+            border-right: 1px solid rgba(212,175,55,.18);
+        }
+
+        [data-testid="stMetricValue"] {
+            color: var(--gold);
         }
         </style>
         """,
@@ -234,23 +360,22 @@ def inject_theme() -> None:
     )
 
 
-def status_icon(status: str) -> str:
-    return {
-        "completed": "⚔️",
-        "in_progress": "🔥",
-        "planned": "○",
-    }.get(status, "◆")
+def status_badge(status: str) -> str:
+    normalized = status.lower().strip()
+    if normalized == "completed":
+        return '<span class="badge badge-completed">COMPLETED</span>'
+    if normalized == "active":
+        return '<span class="badge badge-active">ACTIVE</span>'
+    return f'<span class="badge badge-planned">{normalized.upper()}</span>'
 
 
-def render_header(control: dict[str, Any]) -> None:
+def render_hero(project: dict[str, Any]) -> None:
     st.markdown(
         f"""
         <div class="hero">
-            <div class="hero-title">⚔️ ZANPAKUTŌ COMMAND CENTER</div>
+            <div class="hero-title">⚔ ZANPAKUTŌ COMMAND CENTER</div>
             <div class="hero-sub">
-                <span class="gold">EINSTEIN AI V2</span>
-                &nbsp;•&nbsp; Owner Project Control
-                &nbsp;•&nbsp; {control.get("status", "UNKNOWN")}
+                OWNER COMMAND CENTER · {project.get("name", "Einstein AI V2")}
             </div>
         </div>
         <div class="reiatsu-flow"></div>
@@ -259,178 +384,215 @@ def render_header(control: dict[str, Any]) -> None:
     )
 
 
-def render_overview(control: dict[str, Any]) -> None:
-    steps = control.get("steps", [])
-    completed = sum(1 for s in steps if s.get("status") == "completed")
-    active = sum(1 for s in steps if s.get("status") == "in_progress")
-    planned = sum(1 for s in steps if s.get("status") == "planned")
+def render_telemetry(project: dict[str, Any], roadmap: list[dict[str, Any]]) -> None:
+    completed = sum(item.get("status") == "completed" for item in roadmap)
+    active = sum(item.get("status") == "active" for item in roadmap)
+    planned = sum(item.get("status") == "planned" for item in roadmap)
 
-    progress = float(control.get("overall_progress", 0))
+    cols = st.columns(5)
 
-    a, b, c, d = st.columns(4)
+    values = [
+        (f"{project.get('overall_progress', 0)}%", "OVERALL"),
+        (str(completed), "COMPLETED"),
+        (str(active), "ACTIVE"),
+        (str(planned), "PLANNED"),
+        (project.get("health", "UNKNOWN"), "HEALTH"),
+    ]
 
-    with a:
-        st.metric("PROJECT", control.get("project", "Einstein AI V2"))
-
-    with b:
-        st.metric("PROGRESS", f"{progress:.0f}%")
-
-    with c:
-        st.metric("COMPLETED", completed)
-
-    with d:
-        st.metric("REMAINING", active + planned)
-
-    st.progress(min(max(progress / 100, 0), 1))
+    for col, (value, label) in zip(cols, values):
+        with col:
+            st.markdown(
+                f"""
+                <div class="telemetry-card">
+                    <div class="telemetry-value">{value}</div>
+                    <div class="telemetry-label">{label}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
 
-def render_next_mission(control: dict[str, Any]) -> None:
-    st.subheader("NEXT MISSION")
+def render_mission(mission: dict[str, Any]) -> None:
+    st.markdown('<div class="section">⚔ NEXT MISSION</div>', unsafe_allow_html=True)
 
-    current = next(
-        (
-            step
-            for step in control.get("steps", [])
-            if step.get("status") == "in_progress"
-        ),
-        None,
+    tasks = mission.get("tasks", [])
+    expected = mission.get("expected_output", [])
+
+    task_html = "".join(f"<li>{task}</li>" for task in tasks)
+    output_html = "".join(f"<li>{item}</li>" for item in expected)
+
+    st.markdown(
+        f"""
+        <div class="mission-card">
+            <div class="mission-title">
+                {mission.get("id", "MISSION")} · {mission.get("title", "No mission")}
+            </div>
+            <div class="detail-text" style="margin-top:7px;">
+                {mission.get("objective", "")}
+            </div>
+
+            <div class="detail-title">WHY THIS MATTERS</div>
+            <div class="detail-text">{mission.get("why", "")}</div>
+
+            <div class="detail-title">MISSION TASKS</div>
+            <ul class="detail-text">{task_html}</ul>
+
+            <div class="detail-title">EXPECTED OUTPUT</div>
+            <ul class="detail-text">{output_html}</ul>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
-    if current:
+
+def render_roadmap(roadmap: list[dict[str, Any]]) -> None:
+    st.markdown('<div class="section">PROJECT ROADMAP</div>', unsafe_allow_html=True)
+
+    for step in roadmap:
+        status = step.get("status", "planned")
+        progress = max(0, min(100, int(step.get("progress", 0))))
+
+        css_class = "active" if status == "active" else (
+            "completed" if status == "completed" else ""
+        )
+
         st.markdown(
             f"""
-            <div class="mission-card">
-                <div class="step-title">
-                    {status_icon(current.get("status", ""))}
-                    {current.get("id", "")} — {current.get("name", "")}
+            <div class="roadmap-card {css_class}">
+                <div>
+                    <span class="roadmap-name">
+                        {step.get("id", "?")} · {step.get("name", "Unnamed")}
+                    </span>
+                    {status_badge(status)}
                 </div>
-                <div class="small">
-                    {current.get("summary", "")}
+
+                <div class="roadmap-meta">
+                    Priority: {step.get("priority", "normal").upper()}
+                    · Progress: {progress}%
+                </div>
+
+                <div class="progress-shell">
+                    <div class="progress-fill" style="width:{progress}%"></div>
                 </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-        actions = current.get("next_actions", [])
-        if actions:
-            st.markdown("**Immediate actions**")
-            for action in actions:
-                st.markdown(f"- {action}")
-
-    mission = control.get("next_mission")
-    if mission:
-        st.info(mission)
-
-
-def render_roadmap(control: dict[str, Any]) -> None:
-    st.subheader("PROJECT ROADMAP")
-
-    steps = control.get("steps", [])
-
-    for step in steps:
-        status = step.get("status", "planned")
-        progress = float(step.get("progress", 0))
-
         with st.expander(
-            f"{status_icon(status)} {step.get('id', '')} — "
-            f"{step.get('name', '')}   [{progress:.0f}%]"
+            f"View details · {step.get('id', '?')} · {step.get('name', 'Step')}",
+            expanded=(status == "active"),
         ):
             st.markdown(
+                f"**Purpose:** {step.get('summary', '')}"
+            )
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.markdown("**Completed**")
+                done = step.get("what_done", [])
+                if done:
+                    for item in done:
+                        st.markdown(f"✅ {item}")
+                else:
+                    st.caption("No completed work recorded.")
+
+                st.markdown("**Remaining**")
+                remaining = step.get("remaining", [])
+                if remaining:
+                    for item in remaining:
+                        st.markdown(f"⬜ {item}")
+                else:
+                    st.caption("No remaining work recorded.")
+
+            with col2:
+                st.markdown("**Plan**")
+                for item in step.get("plan", []):
+                    st.markdown(f"→ {item}")
+
+                st.markdown("**Deliverables**")
+                for item in step.get("deliverables", []):
+                    st.markdown(f"📦 {item}")
+
+                st.markdown("**Dependencies**")
+                dependencies = step.get("dependencies", [])
+                if dependencies:
+                    for item in dependencies:
+                        st.markdown(f"🔗 {item}")
+                else:
+                    st.caption("None")
+
+            st.markdown(
                 f"""
-                <div class="roadmap-card">
-                    <div class="step-title">{step.get("name", "")}</div>
-                    <div class="step-meta">
-                        Status: {status.replace("_", " ").upper()}
+                <div class="card">
+                    <div class="detail-title">NEXT ACTION</div>
+                    <div class="detail-text">
+                        {step.get("next_action", "No next action recorded.")}
                     </div>
-                    <p>{step.get("summary", "")}</p>
-                    <p><b>What this step does:</b> {step.get("what_it_does", "")}</p>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
-            st.progress(min(max(progress / 100, 0), 1))
 
-            completed = step.get("completed", [])
-            remaining = step.get("remaining", [])
-            actions = step.get("next_actions", [])
-            deliverables = step.get("deliverables", [])
-            dependencies = step.get("dependencies", [])
-
-            left, right = st.columns(2)
-
-            with left:
-                st.markdown("**Completed**")
-                if completed:
-                    for item in completed:
-                        st.markdown(f"- ✅ {item}")
-                else:
-                    st.markdown("- None recorded yet")
-
-                st.markdown("**Remaining**")
-                if remaining:
-                    for item in remaining:
-                        st.markdown(f"- ⏳ {item}")
-                else:
-                    st.markdown("- None")
-
-            with right:
-                st.markdown("**Next actions**")
-                if actions:
-                    for item in actions:
-                        st.markdown(f"- ▶️ {item}")
-                else:
-                    st.markdown("- None")
-
-                st.markdown("**Deliverables**")
-                if deliverables:
-                    for item in deliverables:
-                        st.markdown(f"- 📦 `{item}`")
-
-                if dependencies:
-                    st.markdown("**Depends on**")
-                    st.caption(" • ".join(dependencies))
-
-
-def render_work_summary(control: dict[str, Any]) -> None:
-    st.subheader("WORK STATUS")
-
-    completed = [
-        s for s in control.get("steps", [])
-        if s.get("status") == "completed"
-    ]
-
+def render_work_summary(roadmap: list[dict[str, Any]]) -> None:
+    completed = [x for x in roadmap if x.get("status") == "completed"]
+    active = [x for x in roadmap if x.get("status") == "active"]
     remaining = [
-        s for s in control.get("steps", [])
-        if s.get("status") != "completed"
+        x for x in roadmap
+        if x.get("status") in {"planned", "blocked", "locked"}
     ]
+
+    st.markdown('<div class="section">WORK SUMMARY</div>', unsafe_allow_html=True)
 
     left, right = st.columns(2)
 
     with left:
-        st.markdown("### ✅ COMPLETED WORK")
-        for step in completed:
-            st.markdown(
-                f"""
-                <div class="roadmap-card">
-                    <b>{step.get("id")} — {step.get("name")}</b><br>
-                    <span class="small">{step.get("summary", "")}</span>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+        st.markdown("### COMPLETED WORK")
+        if completed:
+            for item in completed:
+                st.markdown(
+                    f"""
+                    <div class="card">
+                        {status_badge("completed")}
+                        <b>{item.get("id")} · {item.get("name")}</b>
+                        <div class="detail-text">
+                            {item.get("summary", "")}
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+        else:
+            st.info("No completed work recorded.")
 
     with right:
-        st.markdown("### ⏳ REMAINING WORK")
-        for step in remaining:
+        st.markdown("### REMAINING WORK")
+        if active:
+            for item in active:
+                st.markdown(
+                    f"""
+                    <div class="card">
+                        {status_badge("active")}
+                        <b>{item.get("id")} · {item.get("name")}</b>
+                        <div class="detail-text">
+                            {item.get("summary", "")}
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+        for item in remaining:
             st.markdown(
                 f"""
-                <div class="mission-card">
-                    <b>{step.get("id")} — {step.get("name")}</b><br>
-                    <span class="small">
-                        {step.get("progress", 0)}% complete
-                    </span>
+                <div class="card">
+                    {status_badge(item.get("status", "planned"))}
+                    <b>{item.get("id")} · {item.get("name")}</b>
+                    <div class="detail-text">
+                        {item.get("summary", "")}
+                    </div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -438,7 +600,7 @@ def render_work_summary(control: dict[str, Any]) -> None:
 
 
 def render_events(events: list[dict[str, Any]]) -> None:
-    st.subheader("PROJECT EVENTS")
+    st.markdown('<div class="section">PROJECT EVENTS</div>', unsafe_allow_html=True)
 
     if not events:
         st.caption("No project events recorded yet.")
@@ -453,141 +615,106 @@ def render_events(events: list[dict[str, Any]]) -> None:
             f"""
             <div class="event-card">
                 <b>{event_type}</b>
-                <span class="small"> {timestamp}</span><br>
-                {message}
+                <span style="color:#777;"> {timestamp}</span>
+                <div>{message}</div>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
 
-def render_project_information(control: dict[str, Any]) -> None:
-    st.subheader("PROJECT INFORMATION")
+def render_project_information(
+    project: dict[str, Any],
+    git: dict[str, str],
+    notes: list[str],
+) -> None:
+    st.markdown(
+        '<div class="section">PROJECT INFORMATION</div>',
+        unsafe_allow_html=True,
+    )
 
     left, right = st.columns(2)
 
     with left:
-        st.markdown(f"**Project:** {control.get('project', 'Einstein AI V2')}")
-        st.markdown(f"**Version:** {control.get('version', '2.0')}")
-        st.markdown(f"**Status:** {control.get('status', 'UNKNOWN')}")
+        st.markdown(
+            f"""
+            <div class="card">
+                <div class="detail-title">PROJECT</div>
+                <div class="detail-text">{project.get("name", "")}</div>
+
+                <div class="detail-title">CODENAME</div>
+                <div class="detail-text">{project.get("codename", "")}</div>
+
+                <div class="detail-title">CURRENT PHASE</div>
+                <div class="detail-text">{project.get("current_phase", "")}</div>
+
+                <div class="detail-title">HEALTH</div>
+                <div class="detail-text">{project.get("health", "")}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     with right:
         st.markdown(
-            f"**Current step:** {control.get('current_step', 'Unknown')}"
-        )
-        st.markdown(
-            f"**Last updated:** {control.get('last_updated', 'Unknown')}"
-        )
-
-
-def render_system_telemetry(state: dict[str, Any], git: dict[str, str]) -> None:
-    st.subheader("SYSTEM TELEMETRY")
-
-    a, b, c = st.columns(3)
-
-    with a:
-        st.markdown(
             f"""
-            <div class="telemetry-card">
-                <b>Git Branch</b><br>
-                {git.get("branch", "unknown")}
+            <div class="card">
+                <div class="detail-title">BRANCH</div>
+                <div class="detail-text">{git.get("branch", "unknown")}</div>
+
+                <div class="detail-title">COMMIT</div>
+                <div class="detail-text">{git.get("commit", "unknown")}</div>
+
+                <div class="detail-title">OWNER NOTES</div>
+                <div class="detail-text">
+                    {"<br>".join(notes)}
+                </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
-
-    with b:
-        st.markdown(
-            f"""
-            <div class="telemetry-card">
-                <b>Commit</b><br>
-                {git.get("commit", "unknown")}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    with c:
-        phase = state.get("current_phase", "Owner Control Center")
-        st.markdown(
-            f"""
-            <div class="telemetry-card">
-                <b>Active Phase</b><br>
-                {phase}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-
-def render_sidebar() -> None:
-    with st.sidebar:
-        st.markdown("## ⚔️ OWNER")
-        st.caption("Zanpakutō Project Control")
-
-        if st.button("🔄 Refresh Dashboard", use_container_width=True):
-            st.rerun()
-
-        st.markdown("---")
-        st.markdown("### Control Sources")
-        st.caption("project_control.json")
-        st.caption("project_state.json")
-        st.caption("project_events.jsonl")
-
-        st.markdown("---")
-        st.markdown("### Mission Philosophy")
-        st.caption("PLAN")
-        st.caption("BUILD")
-        st.caption("VALIDATE")
-        st.caption("LEARN")
-        st.caption("ADVANCE")
 
 
 def render_dashboard() -> None:
     st.set_page_config(
         page_title="Einstein AI V2 — Zanpakutō Command Center",
-        page_icon="⚔️",
+        page_icon="⚔",
         layout="wide",
-        initial_sidebar_state="expanded",
+        initial_sidebar_state="collapsed",
     )
 
     inject_theme()
-    render_sidebar()
 
     control = load_project_control()
-    state = load_state()
-    events = load_events()
-    git = git_info()
 
     if not control:
         st.error("Project control data could not be loaded.")
-        st.stop()
+        return
 
-    render_header(control)
-    render_overview(control)
-    render_next_mission(control)
+    project = control.get("project", {})
+    roadmap = control.get("roadmap", [])
+    mission = control.get("current_mission", {})
+    notes = control.get("owner_notes", [])
 
-    st.markdown("---")
-    render_roadmap(control)
+    render_hero(project)
+    render_telemetry(project, roadmap)
 
-    st.markdown("---")
-    render_work_summary(control)
+    render_mission(mission)
+    render_work_summary(roadmap)
 
-    st.markdown("---")
+    render_roadmap(roadmap)
+
+    events = load_events()
     render_events(events)
 
-    st.markdown("---")
-    render_project_information(control)
-
-    st.markdown("---")
-    render_system_telemetry(state, git)
+    git = git_info()
+    render_project_information(project, git, notes)
 
     st.markdown(
         """
-        <div style="text-align:center; padding:16px; color:#777;">
-            ⚔️ EINSTEIN AI V2 &nbsp;•&nbsp;
-            OWNER COMMAND CENTER &nbsp;•&nbsp;
-            <span style="color:#d4af37;">PLAN • BUILD • LEARN • ADVANCE</span>
+        <div class="footer">
+            EINSTEIN AI V2 · OWNER CONTROL CENTER ·
+            PLAN • BUILD • VALIDATE • ADVANCE
         </div>
         """,
         unsafe_allow_html=True,
