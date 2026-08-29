@@ -156,6 +156,11 @@ def test_dashboard_file_contains_landscape_configuration():
             encoding="utf-8"
         )
 
+    # The owner dashboard is intentionally Streamlit-native.
+    # The previous HTML/CSS telemetry marker is no longer required.
     assert "layout=\"wide\"" in source
     assert "OWNER COMMAND CENTER" in source
-    assert "SYSTEM TELEMETRY" in source
+    assert "Owner Monitoring Dashboard" in source
+    assert "st.metric(" in source
+    assert "st.progress(" in source
+    assert "st.expander(" in source

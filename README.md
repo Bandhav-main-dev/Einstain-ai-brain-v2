@@ -184,3 +184,75 @@ visual system inspired by Zanpakuto/reishi aesthetics.
 The visual system is an original engineering dashboard design and does not
 use copyrighted character artwork.
 
+## Einstein AI V2 — Streamlit Monitoring Checkpoint
+
+**Checkpoint date:** 2026-08-29
+
+The Einstein AI V2 monitoring system has completed the
+Streamlit-native dashboard repair and validation stage.
+
+### Owner Dashboard
+
+The owner command center now uses native Streamlit components
+instead of the previous HTML/CSS rendering layer.
+
+Validated components include:
+
+- `st.title()`
+- `st.caption()`
+- `st.header()`
+- `st.subheader()`
+- `st.metric()`
+- `st.progress()`
+- `st.columns()`
+- `st.container()`
+- `st.expander()`
+- `st.info()`
+- `st.warning()`
+- `st.success()`
+- `st.write()`
+
+The old dashboard HTML/CSS rendering path was removed from
+`monitor/owner_dashboard.py`.
+
+### Dashboard Data Validation
+
+Current project roadmap:
+
+- 12 roadmap steps
+- Overall progress: **62.1%**
+- Active step: **Project Control Engine**
+- Active-step progress: **45%**
+
+The dashboard successfully loads:
+
+- project control
+- roadmap data
+- project state
+- project events
+- Git information
+- roadmap status
+- roadmap progress
+- overall project progress
+- active-step information
+
+### Automated Quality Validation
+
+Latest validation result:
+
+- Python compilation: **PASS**
+- AST validation: **PASS**
+- Streamlit runtime module validation: **PASS**
+- Dashboard data validation: **PASS**
+- Ruff: **PASS**
+- Pytest: **28 passed**
+- Dashboard tests: **PASS**
+
+### Repository Hygiene
+
+Local dashboard repair backups and Streamlit runtime logs are
+kept outside version control through `.gitignore`.
+
+These files remain available locally for recovery but are not
+part of the production repository.
+

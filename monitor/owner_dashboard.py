@@ -1,12 +1,14 @@
 """
 Einstein AI V2 — Owner Zanpakutō Command Center.
 
-The dashboard is intentionally owner-focused.
+Owner-focused project control dashboard.
 
-Project roadmap and mission data are loaded from:
-    monitor/project_control.json
+The dashboard reads project_control.json as the project roadmap
+source of truth.
 
-The Owner UI does not expose developer-only validation controls.
+Responsive layout:
+- Desktop / laptop: two-column roadmap grid.
+- Mobile: single-column stacked roadmap.
 """
 
 from __future__ import annotations
@@ -18,708 +20,837 @@ from typing import Any
 
 import streamlit as st
 
+# =============================================================================
 # OWNER COMMAND CENTER
-# ZANPAKUTŌ COMMAND CENTER
-# SYSTEM TELEMETRY
-# PROJECT EVENTS
+# =============================================================================
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-MONITOR_DIR = PROJECT_ROOT / "monitor"
-
 OWNER_FILE = Path(__file__)
-CONTROL_FILE = MONITOR_DIR / "project_control.json"
+
 STATE_FILE = PROJECT_ROOT / "logs" / "project_state.json"
 EVENT_FILE = PROJECT_ROOT / "logs" / "project_events.jsonl"
+CONTROL_FILE = PROJECT_ROOT / "monitor" / "project_control.json"
 
+
+# =============================================================================
+# PAGE CONFIGURATION
+# =============================================================================
+
+st.set_page_config(
+    page_title="Einstein AI V2 — Zanpakutō Command Center",
+    page_icon="⚔️",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+)
+
+
+# =============================================================================
+# DATA LOADERS
+# =============================================================================
 
 def load_state() -> dict[str, Any]:
-    """Load project state while remaining compatible with tests."""
+    """Load project state safely."""
     if not STATE_FILE.exists():
         return {}
 
     try:
-        data = json.loads(STATE_FILE.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return {}
+        data = json.loads(
+            STATE_FILE.read_text(encoding="utf-8")
+        )
 
-    return data if isinstance(data, dict) else {}
+        return data if isinstance(data, dict) else {}
+
+    except (
+        json.JSONDecodeError,
+        OSError,
+        TypeError,
+    ):
+        return {}
 
 
 def load_events() -> list[dict[str, Any]]:
-    """Load project events, newest first."""
+    """Load project events with newest events first."""
     if not EVENT_FILE.exists():
         return []
 
     events: list[dict[str, Any]] = []
 
     try:
-        lines = EVENT_FILE.read_text(encoding="utf-8").splitlines()
+        for line in EVENT_FILE.read_text(
+            encoding="utf-8"
+        ).splitlines():
+
+            line = line.strip()
+
+            if not line:
+                continue
+
+            try:
+                item = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+
+            if isinstance(item, dict):
+                events.append(item)
+
     except OSError:
         return []
-
-    for line in lines:
-        line = line.strip()
-        if not line:
-            continue
-
-        try:
-            item = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-
-        if isinstance(item, dict):
-            events.append(item)
 
     return list(reversed(events))
 
 
 def load_project_control() -> dict[str, Any]:
-    """Load the owner project-control source of truth."""
+    """Load project_control.json safely."""
     if not CONTROL_FILE.exists():
         return {}
 
     try:
-        data = json.loads(CONTROL_FILE.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return {}
+        data = json.loads(
+            CONTROL_FILE.read_text(encoding="utf-8")
+        )
 
-    return data if isinstance(data, dict) else {}
+        return data if isinstance(data, dict) else {}
+
+    except (
+        json.JSONDecodeError,
+        OSError,
+        TypeError,
+    ):
+        return {}
 
 
 def git_info() -> dict[str, str]:
     """Return lightweight Git information."""
     def run_git(*args: str) -> str:
-        result = subprocess.run(
-            ["git", *args],
-            cwd=PROJECT_ROOT,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        return result.stdout.strip() or "unknown"
+        try:
+            result = subprocess.run(
+                ["git", *args],
+                cwd=PROJECT_ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            return result.stdout.strip()
+
+        except OSError:
+            return ""
 
     return {
-        "branch": run_git("branch", "--show-current"),
-        "commit": run_git("rev-parse", "--short", "HEAD"),
+        "branch": run_git("branch", "--show-current") or "unknown",
+        "commit": run_git("rev-parse", "--short", "HEAD") or "unknown",
         "status": run_git("status", "--short", "--branch"),
     }
 
 
+# =============================================================================
+# NORMALIZATION
+# =============================================================================
+
+def get_steps(control: dict[str, Any]) -> list[dict[str, Any]]:
+    """Find roadmap steps regardless of the JSON container name."""
+    candidates = (
+        control.get("steps"),
+        control.get("roadmap"),
+        control.get("roadmap_steps"),
+        control.get("project_steps"),
+    )
+
+    for candidate in candidates:
+        if isinstance(candidate, list):
+            return [
+                item
+                for item in candidate
+                if isinstance(item, dict)
+            ]
+
+    return []
+
+
+def step_title(step: dict[str, Any], index: int) -> str:
+    """Get a readable step title."""
+    return str(
+        step.get("title")
+        or step.get("name")
+        or step.get("step_name")
+        or step.get("phase")
+        or f"Project Step {index}"
+    )
+
+
+def step_status(step: dict[str, Any]) -> str:
+    """Normalize roadmap status."""
+    value = str(
+        step.get("status")
+        or step.get("state")
+        or "not_started"
+    ).strip().lower()
+
+    if value in {
+        "complete",
+        "completed",
+        "done",
+        "finished",
+    }:
+        return "completed"
+
+    if value in {
+        "active",
+        "in_progress",
+        "in-progress",
+        "working",
+    }:
+        return "active"
+
+    if value in {
+        "blocked",
+        "block",
+        "waiting",
+    }:
+        return "blocked"
+
+    return "not_started"
+
+
+def status_label(status: str) -> str:
+    """Human-readable status."""
+    return {
+        "completed": "COMPLETED",
+        "active": "ACTIVE",
+        "blocked": "BLOCKED",
+        "not_started": "NOT STARTED",
+    }.get(status, "NOT STARTED")
+
+
+def status_symbol(status: str) -> str:
+    """Status symbol."""
+    return {
+        "completed": "✓",
+        "active": "◆",
+        "blocked": "!",
+        "not_started": "○",
+    }.get(status, "○")
+
+
+def step_progress(step: dict[str, Any]) -> float:
+    """Get step progress as a percentage."""
+    value = (
+        step.get("progress")
+        if step.get("progress") is not None
+        else step.get("progress_percent", 0)
+    )
+
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        value = 0.0
+
+    return max(0.0, min(100.0, value))
+
+
+def text_value(
+    step: dict[str, Any],
+    *keys: str,
+    default: str = "Not specified",
+) -> str:
+    """Return the first meaningful textual field."""
+    for key in keys:
+        value = step.get(key)
+
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+
+        if isinstance(value, list) and value:
+            return " • ".join(str(item) for item in value)
+
+    return default
+
+
+def overall_progress(
+    control: dict[str, Any],
+    steps: list[dict[str, Any]],
+) -> float:
+    """Determine overall project progress."""
+    for key in (
+        "overall_progress",
+        "overall_progress_percent",
+        "progress",
+        "progress_percent",
+    ):
+        value = control.get(key)
+
+        if value is not None:
+            try:
+                return max(0.0, min(100.0, float(value)))
+            except (TypeError, ValueError):
+                pass
+
+    if not steps:
+        return 0.0
+
+    return sum(step_progress(step) for step in steps) / len(steps)
+
+
+def first_active_step(
+    steps: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    """Return active step, otherwise first unfinished step."""
+    for step in steps:
+        if step_status(step) == "active":
+            return step
+
+    for step in steps:
+        if step_status(step) != "completed":
+            return step
+
+    return None
+
+
+# =============================================================================
+# BLEACH / ZANPAKUTO THEME
+# =============================================================================
+
 def inject_theme() -> None:
-    """Inject compact Zanpakutō-inspired styling."""
-    st.markdown(
-        """
-        <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+    """Legacy compatibility hook.
 
-        :root {
-            --red: #b11226;
-            --dark-red: #7d0b19;
-            --black: #070707;
-            --black2: #111111;
-            --white: #f4f1ea;
-            --gold: #d4af37;
-            --muted: #a7a7a7;
-            --line: rgba(212,175,55,.28);
-        }
+    The dashboard now uses Streamlit-native components only.
+    No HTML or custom CSS is injected.
+    """
+    return
 
-        .stApp {
-            background:
-                radial-gradient(circle at 80% 8%, rgba(177,18,38,.18), transparent 27%),
-                radial-gradient(circle at 12% 30%, rgba(212,175,55,.08), transparent 25%),
-                linear-gradient(135deg, #050505 0%, #0c0c0c 48%, #100407 100%);
-            color: var(--white);
-        }
 
-        .block-container {
-            max-width: 1180px;
-            padding-top: 1rem;
-            padding-bottom: 2rem;
-        }
+def roadmap_card(
+    step: dict[str, Any],
+    index: int,
+) -> None:
+    """Render a roadmap step using native Streamlit components."""
 
-        h1, h2, h3 {
-            font-family: "Cinzel", serif !important;
-            letter-spacing: .04em;
-        }
-
-        .hero {
-            border: 1px solid var(--line);
-            border-left: 5px solid var(--red);
-            background: linear-gradient(100deg, rgba(177,18,38,.16), rgba(10,10,10,.88));
-            padding: 18px 22px;
-            border-radius: 12px;
-            box-shadow: 0 0 30px rgba(177,18,38,.12);
-            margin-bottom: 14px;
-        }
-
-        .hero-title {
-            color: var(--white);
-            font-family: "Cinzel", serif;
-            font-size: 25px;
-            font-weight: 700;
-        }
-
-        .hero-sub {
-            color: #bcbcbc;
-            font-size: 12px;
-            margin-top: 4px;
-        }
-
-        .section {
-            color: var(--gold);
-            font-family: "Cinzel", serif;
-            font-size: 16px;
-            font-weight: 700;
-            letter-spacing: .08em;
-            border-bottom: 1px solid var(--line);
-            padding-bottom: 5px;
-            margin: 18px 0 10px;
-        }
-
-        .card {
-            background: linear-gradient(145deg, rgba(18,18,18,.96), rgba(8,8,8,.96));
-            border: 1px solid rgba(255,255,255,.08);
-            border-radius: 10px;
-            padding: 13px 15px;
-            margin-bottom: 9px;
-            min-height: 80px;
-        }
-
-        .card:hover {
-            border-color: rgba(212,175,55,.42);
-            box-shadow: 0 0 18px rgba(212,175,55,.07);
-        }
-
-        .telemetry-card {
-            background: #0b0b0b;
-            border: 1px solid rgba(212,175,55,.20);
-            border-top: 3px solid var(--gold);
-            border-radius: 9px;
-            padding: 11px;
-            text-align: center;
-        }
-
-        .telemetry-value {
-            color: var(--gold);
-            font-family: "Cinzel", serif;
-            font-size: 21px;
-            font-weight: 700;
-        }
-
-        .telemetry-label {
-            color: #aaa;
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: .08em;
-        }
-
-        .mission-card {
-            border: 1px solid rgba(177,18,38,.60);
-            border-left: 4px solid var(--red);
-            background: linear-gradient(110deg, rgba(177,18,38,.16), #0b0b0b);
-            border-radius: 10px;
-            padding: 15px;
-        }
-
-        .mission-title {
-            font-family: "Cinzel", serif;
-            color: var(--white);
-            font-size: 18px;
-            font-weight: 700;
-        }
-
-        .roadmap-card {
-            border: 1px solid rgba(255,255,255,.08);
-            background: #0b0b0b;
-            border-radius: 9px;
-            padding: 12px;
-            margin-bottom: 8px;
-        }
-
-        .roadmap-card.active {
-            border-color: rgba(177,18,38,.72);
-            box-shadow: inset 4px 0 0 var(--red);
-        }
-
-        .roadmap-card.completed {
-            border-color: rgba(212,175,55,.20);
-        }
-
-        .roadmap-name {
-            font-family: "Cinzel", serif;
-            font-weight: 700;
-            color: var(--white);
-        }
-
-        .roadmap-meta {
-            color: #999;
-            font-size: 11px;
-        }
-
-        .progress-shell {
-            background: #1a1a1a;
-            border-radius: 20px;
-            height: 7px;
-            overflow: hidden;
-            margin-top: 8px;
-        }
-
-        .progress-fill {
-            background: linear-gradient(90deg, var(--red), var(--gold));
-            height: 100%;
-            border-radius: 20px;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 20px;
-            font-size: 9px;
-            font-weight: 700;
-            letter-spacing: .06em;
-            text-transform: uppercase;
-            margin-right: 5px;
-        }
-
-        .badge-completed {
-            background: rgba(212,175,55,.14);
-            color: var(--gold);
-        }
-
-        .badge-active {
-            background: rgba(177,18,38,.18);
-            color: #ff6375;
-        }
-
-        .badge-planned {
-            background: rgba(255,255,255,.07);
-            color: #aaa;
-        }
-
-        .event-card {
-            border-left: 3px solid var(--gold);
-            background: #0b0b0b;
-            padding: 9px 12px;
-            border-radius: 7px;
-            margin-bottom: 7px;
-            font-size: 12px;
-        }
-
-        .detail-title {
-            color: var(--gold);
-            font-family: "Cinzel", serif;
-            font-size: 13px;
-            font-weight: 700;
-            margin-top: 7px;
-        }
-
-        .detail-text {
-            color: #c6c6c6;
-            font-size: 12px;
-            line-height: 1.5;
-        }
-
-        .reiatsu-flow {
-            height: 2px;
-            background: linear-gradient(
-                90deg,
-                transparent,
-                var(--red),
-                var(--gold),
-                var(--red),
-                transparent
-            );
-            animation: reiatsu 3s ease-in-out infinite;
-            margin: 8px 0 14px;
-        }
-
-        @keyframes reiatsu {
-            0%, 100% { opacity: .35; transform: scaleX(.75); }
-            50% { opacity: 1; transform: scaleX(1); }
-        }
-
-        .footer {
-            color: #666;
-            text-align: center;
-            font-size: 10px;
-            padding-top: 18px;
-            letter-spacing: .08em;
-        }
-
-        [data-testid="stSidebar"] {
-            background: #090909;
-            border-right: 1px solid rgba(212,175,55,.18);
-        }
-
-        [data-testid="stMetricValue"] {
-            color: var(--gold);
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
+    title = step_title(
+        step,
+        index + 1,
     )
 
+    status = step_status(step)
 
-def status_badge(status: str) -> str:
-    normalized = status.lower().strip()
-    if normalized == "completed":
-        return '<span class="badge badge-completed">COMPLETED</span>'
-    if normalized == "active":
-        return '<span class="badge badge-active">ACTIVE</span>'
-    return f'<span class="badge badge-planned">{normalized.upper()}</span>'
+    progress = step_progress(step)
 
-
-def render_hero(project: dict[str, Any]) -> None:
-    st.markdown(
-        f"""
-        <div class="hero">
-            <div class="hero-title">⚔ ZANPAKUTŌ COMMAND CENTER</div>
-            <div class="hero-sub">
-                OWNER COMMAND CENTER · {project.get("name", "Einstein AI V2")}
-            </div>
-        </div>
-        <div class="reiatsu-flow"></div>
-        """,
-        unsafe_allow_html=True,
+    description = text_value(
+        step,
+        "description",
+        "summary",
+        "details",
+        default="No description available.",
     )
 
-
-def render_telemetry(project: dict[str, Any], roadmap: list[dict[str, Any]]) -> None:
-    completed = sum(item.get("status") == "completed" for item in roadmap)
-    active = sum(item.get("status") == "active" for item in roadmap)
-    planned = sum(item.get("status") == "planned" for item in roadmap)
-
-    cols = st.columns(5)
-
-    values = [
-        (f"{project.get('overall_progress', 0)}%", "OVERALL"),
-        (str(completed), "COMPLETED"),
-        (str(active), "ACTIVE"),
-        (str(planned), "PLANNED"),
-        (project.get("health", "UNKNOWN"), "HEALTH"),
-    ]
-
-    for col, (value, label) in zip(cols, values):
-        with col:
-            st.markdown(
-                f"""
-                <div class="telemetry-card">
-                    <div class="telemetry-value">{value}</div>
-                    <div class="telemetry-label">{label}</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-
-def render_mission(mission: dict[str, Any]) -> None:
-    st.markdown('<div class="section">⚔ NEXT MISSION</div>', unsafe_allow_html=True)
-
-    tasks = mission.get("tasks", [])
-    expected = mission.get("expected_output", [])
-
-    task_html = "".join(f"<li>{task}</li>" for task in tasks)
-    output_html = "".join(f"<li>{item}</li>" for item in expected)
-
-    st.markdown(
-        f"""
-        <div class="mission-card">
-            <div class="mission-title">
-                {mission.get("id", "MISSION")} · {mission.get("title", "No mission")}
-            </div>
-            <div class="detail-text" style="margin-top:7px;">
-                {mission.get("objective", "")}
-            </div>
-
-            <div class="detail-title">WHY THIS MATTERS</div>
-            <div class="detail-text">{mission.get("why", "")}</div>
-
-            <div class="detail-title">MISSION TASKS</div>
-            <ul class="detail-text">{task_html}</ul>
-
-            <div class="detail-title">EXPECTED OUTPUT</div>
-            <ul class="detail-text">{output_html}</ul>
-        </div>
-        """,
-        unsafe_allow_html=True,
+    st.subheader(
+        f"{index + 1}. {title}"
     )
 
+    col1, col2 = st.columns(2)
 
-def render_roadmap(roadmap: list[dict[str, Any]]) -> None:
-    st.markdown('<div class="section">PROJECT ROADMAP</div>', unsafe_allow_html=True)
-
-    for step in roadmap:
-        status = step.get("status", "planned")
-        progress = max(0, min(100, int(step.get("progress", 0))))
-
-        css_class = "active" if status == "active" else (
-            "completed" if status == "completed" else ""
+    with col1:
+        st.metric(
+            "Status",
+            status_label(status),
         )
 
-        st.markdown(
-            f"""
-            <div class="roadmap-card {css_class}">
-                <div>
-                    <span class="roadmap-name">
-                        {step.get("id", "?")} · {step.get("name", "Unnamed")}
-                    </span>
-                    {status_badge(status)}
-                </div>
-
-                <div class="roadmap-meta">
-                    Priority: {step.get("priority", "normal").upper()}
-                    · Progress: {progress}%
-                </div>
-
-                <div class="progress-shell">
-                    <div class="progress-fill" style="width:{progress}%"></div>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
+    with col2:
+        st.metric(
+            "Progress",
+            f"{progress:.0f}%",
         )
+
+    st.progress(
+        progress / 100.0
+    )
+
+    if description:
+        st.caption(
+            description
+        )
+
+def render_step_details(
+    step: dict[str, Any],
+) -> None:
+    """Render detailed step information using native Streamlit."""
+
+    title = step_title(
+        step,
+        1,
+    )
+
+    status = step_status(step)
+
+    progress = step_progress(step)
+
+    st.subheader(
+        title
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.metric(
+            "Status",
+            status_label(status),
+        )
+
+    with col2:
+        st.metric(
+            "Progress",
+            f"{progress:.0f}%",
+        )
+
+    st.progress(
+        progress / 100.0
+    )
+
+    description = text_value(
+        step,
+        "description",
+        "summary",
+        default="",
+    )
+
+    if description:
+        st.write(
+            description
+        )
+
+    details = text_value(
+        step,
+        "details",
+        "detail",
+        "notes",
+        "explanation",
+        default="",
+    )
+
+    if details:
 
         with st.expander(
-            f"View details · {step.get('id', '?')} · {step.get('name', 'Step')}",
-            expanded=(status == "active"),
+            "Step Details",
+            expanded=True,
         ):
-            st.markdown(
-                f"**Purpose:** {step.get('summary', '')}"
+            st.write(
+                details
             )
 
-            col1, col2 = st.columns(2)
-
-            with col1:
-                st.markdown("**Completed**")
-                done = step.get("what_done", [])
-                if done:
-                    for item in done:
-                        st.markdown(f"✅ {item}")
-                else:
-                    st.caption("No completed work recorded.")
-
-                st.markdown("**Remaining**")
-                remaining = step.get("remaining", [])
-                if remaining:
-                    for item in remaining:
-                        st.markdown(f"⬜ {item}")
-                else:
-                    st.caption("No remaining work recorded.")
-
-            with col2:
-                st.markdown("**Plan**")
-                for item in step.get("plan", []):
-                    st.markdown(f"→ {item}")
-
-                st.markdown("**Deliverables**")
-                for item in step.get("deliverables", []):
-                    st.markdown(f"📦 {item}")
-
-                st.markdown("**Dependencies**")
-                dependencies = step.get("dependencies", [])
-                if dependencies:
-                    for item in dependencies:
-                        st.markdown(f"🔗 {item}")
-                else:
-                    st.caption("None")
-
-            st.markdown(
-                f"""
-                <div class="card">
-                    <div class="detail-title">NEXT ACTION</div>
-                    <div class="detail-text">
-                        {step.get("next_action", "No next action recorded.")}
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-
-def render_work_summary(roadmap: list[dict[str, Any]]) -> None:
-    completed = [x for x in roadmap if x.get("status") == "completed"]
-    active = [x for x in roadmap if x.get("status") == "active"]
-    remaining = [
-        x for x in roadmap
-        if x.get("status") in {"planned", "blocked", "locked"}
-    ]
-
-    st.markdown('<div class="section">WORK SUMMARY</div>', unsafe_allow_html=True)
-
-    left, right = st.columns(2)
-
-    with left:
-        st.markdown("### COMPLETED WORK")
-        if completed:
-            for item in completed:
-                st.markdown(
-                    f"""
-                    <div class="card">
-                        {status_badge("completed")}
-                        <b>{item.get("id")} · {item.get("name")}</b>
-                        <div class="detail-text">
-                            {item.get("summary", "")}
-                        </div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-        else:
-            st.info("No completed work recorded.")
-
-    with right:
-        st.markdown("### REMAINING WORK")
-        if active:
-            for item in active:
-                st.markdown(
-                    f"""
-                    <div class="card">
-                        {status_badge("active")}
-                        <b>{item.get("id")} · {item.get("name")}</b>
-                        <div class="detail-text">
-                            {item.get("summary", "")}
-                        </div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-
-        for item in remaining:
-            st.markdown(
-                f"""
-                <div class="card">
-                    {status_badge(item.get("status", "planned"))}
-                    <b>{item.get("id")} · {item.get("name")}</b>
-                    <div class="detail-text">
-                        {item.get("summary", "")}
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-
-def render_events(events: list[dict[str, Any]]) -> None:
-    st.markdown('<div class="section">PROJECT EVENTS</div>', unsafe_allow_html=True)
-
-    if not events:
-        st.caption("No project events recorded yet.")
-        return
-
-    for event in events[:12]:
-        event_type = event.get("event_type", "EVENT")
-        message = event.get("message", "")
-        timestamp = event.get("timestamp", event.get("time", ""))
-
-        st.markdown(
-            f"""
-            <div class="event-card">
-                <b>{event_type}</b>
-                <span style="color:#777;"> {timestamp}</span>
-                <div>{message}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-
-def render_project_information(
-    project: dict[str, Any],
-    git: dict[str, str],
-    notes: list[str],
-) -> None:
-    st.markdown(
-        '<div class="section">PROJECT INFORMATION</div>',
-        unsafe_allow_html=True,
+    result = text_value(
+        step,
+        "result",
+        "output",
+        "outcome",
+        default="",
     )
 
-    left, right = st.columns(2)
+    if result:
 
-    with left:
-        st.markdown(
-            f"""
-            <div class="card">
-                <div class="detail-title">PROJECT</div>
-                <div class="detail-text">{project.get("name", "")}</div>
+        with st.expander(
+            "Result",
+        ):
+            st.write(
+                result
+            )
 
-                <div class="detail-title">CODENAME</div>
-                <div class="detail-text">{project.get("codename", "")}</div>
 
-                <div class="detail-title">CURRENT PHASE</div>
-                <div class="detail-text">{project.get("current_phase", "")}</div>
-
-                <div class="detail-title">HEALTH</div>
-                <div class="detail-text">{project.get("health", "")}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    with right:
-        st.markdown(
-            f"""
-            <div class="card">
-                <div class="detail-title">BRANCH</div>
-                <div class="detail-text">{git.get("branch", "unknown")}</div>
-
-                <div class="detail-title">COMMIT</div>
-                <div class="detail-text">{git.get("commit", "unknown")}</div>
-
-                <div class="detail-title">OWNER NOTES</div>
-                <div class="detail-text">
-                    {"<br>".join(notes)}
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
+# =============================================================================
+# DASHBOARD
+# =============================================================================
 
 def render_dashboard() -> None:
-    st.set_page_config(
-        page_title="Einstein AI V2 — Zanpakutō Command Center",
-        page_icon="⚔",
-        layout="wide",
-        initial_sidebar_state="collapsed",
+    """Render the Einstein AI V2 owner dashboard."""
+
+    # =====================================================================
+    # PAGE TITLE
+    # =====================================================================
+
+    st.title(
+        "Einstein AI V2"
     )
 
-    inject_theme()
-
-    control = load_project_control()
-
-    if not control:
-        st.error("Project control data could not be loaded.")
-        return
-
-    project = control.get("project", {})
-    roadmap = control.get("roadmap", [])
-    mission = control.get("current_mission", {})
-    notes = control.get("owner_notes", [])
-
-    render_hero(project)
-    render_telemetry(project, roadmap)
-
-    render_mission(mission)
-    render_work_summary(roadmap)
-
-    render_roadmap(roadmap)
-
-    events = load_events()
-    render_events(events)
-
-    git = git_info()
-    render_project_information(project, git, notes)
-
-    st.markdown(
-        """
-        <div class="footer">
-            EINSTEIN AI V2 · OWNER CONTROL CENTER ·
-            PLAN • BUILD • VALIDATE • ADVANCE
-        </div>
-        """,
-        unsafe_allow_html=True,
+    st.caption(
+        "Owner Monitoring Dashboard"
     )
 
+    # =====================================================================
+    # LOAD PROJECT DATA
+    # =====================================================================
+
+    try:
+        control = load_project_control()
+    except Exception as exc:  # noqa: BLE001
+        control = {}
+        st.warning(
+            f"Project control data could not be loaded: {exc}"
+        )
+
+    try:
+        state = load_state()
+    except Exception as exc:  # noqa: BLE001
+        state = {}
+        st.warning(
+            f"Project state could not be loaded: {exc}"
+        )
+
+    try:
+        events = load_events()
+    except Exception as exc:  # noqa: BLE001
+        events = []
+        st.warning(
+            f"Project events could not be loaded: {exc}"
+        )
+
+    try:
+        git = git_info()
+    except Exception as exc:  # noqa: BLE001
+        git = {}
+        st.warning(
+            f"Git information could not be loaded: {exc}"
+        )
+
+    # =====================================================================
+    # ROADMAP
+    # =====================================================================
+
+    steps = get_steps(
+        control
+    )
+
+    progress = overall_progress(
+        steps
+    )
+
+    active_step = first_active_step(
+        steps
+    )
+
+    # =====================================================================
+    # PROJECT OVERVIEW
+    # =====================================================================
+
+    st.header(
+        "Project Overview"
+    )
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.metric(
+            "Project",
+            "Einstein AI V2",
+        )
+
+    with col2:
+        st.metric(
+            "Overall Progress",
+            f"{progress:.0f}%",
+        )
+
+    with col3:
+        st.metric(
+            "Roadmap Steps",
+            str(len(steps)),
+        )
+
+    with col4:
+        st.metric(
+            "Events",
+            str(len(events)),
+        )
+
+    st.progress(
+        progress / 100.0
+    )
+
+    # =====================================================================
+    # CURRENT STEP
+    # =====================================================================
+
+    st.header(
+        "Current Step"
+    )
+
+    if active_step:
+
+        render_step_details(
+            active_step
+        )
+
+    else:
+
+        st.info(
+            "No active roadmap step."
+        )
+
+    # =====================================================================
+    # ROADMAP
+    # =====================================================================
+
+    st.header(
+        "Roadmap"
+    )
+
+    if not steps:
+
+        st.info(
+            "No roadmap steps are currently available."
+        )
+
+    else:
+
+        for index, step in enumerate(steps):
+
+            if not isinstance(
+                step,
+                dict,
+            ):
+                continue
+
+            with st.container():
+
+                roadmap_card(
+                    step,
+                    index,
+                )
+
+    # =====================================================================
+    # PROJECT STATE
+    # =====================================================================
+
+    st.header(
+        "Project State"
+    )
+
+    if state:
+
+        with st.expander(
+            "Current Project State",
+            expanded=False,
+        ):
+
+            for key, value in state.items():
+
+                if isinstance(
+                    value,
+                    (dict, list),
+                ):
+
+                    st.write(
+                        f"**{key}**"
+                    )
+
+                    st.json(
+                        value
+                    )
+
+                else:
+
+                    st.write(
+                        f"**{key}:** {value}"
+                    )
+
+    else:
+
+        st.info(
+            "No project state is currently available."
+        )
+
+    # =====================================================================
+    # RECENT EVENTS
+    # =====================================================================
+
+    st.header(
+        "Recent Events"
+    )
+
+    if events:
+
+        recent_events = events[:10]
+
+        for event in recent_events:
+
+            if not isinstance(
+                event,
+                dict,
+            ):
+                continue
+
+            timestamp = (
+                event.get("timestamp")
+                or event.get("time")
+                or event.get("created_at")
+                or ""
+            )
+
+            event_type = (
+                event.get("event")
+                or event.get("type")
+                or event.get("action")
+                or "EVENT"
+            )
+
+            message = (
+                event.get("message")
+                or event.get("description")
+                or event.get("detail")
+                or ""
+            )
+
+            with st.expander(
+                f"{event_type} — {timestamp}",
+                expanded=False,
+            ):
+
+                if message:
+                    st.write(
+                        message
+                    )
+
+                st.json(
+                    event
+                )
+
+    else:
+
+        st.info(
+            "No project events are currently available."
+        )
+
+    # =====================================================================
+    # GIT INFORMATION
+    # =====================================================================
+
+    st.header(
+        "Git Information"
+    )
+
+    if git:
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            branch = (
+                git.get("branch")
+                or git.get("current_branch")
+                or "Unknown"
+            )
+
+            st.metric(
+                "Branch",
+                str(branch),
+            )
+
+        with col2:
+
+            commit = (
+                git.get("commit")
+                or git.get("sha")
+                or git.get("commit_hash")
+                or "Unknown"
+            )
+
+            commit_text = str(
+                commit
+            )
+
+            if len(commit_text) > 12:
+                commit_text = commit_text[:12]
+
+            st.metric(
+                "Commit",
+                commit_text,
+            )
+
+        with st.expander(
+            "Git Details",
+            expanded=False,
+        ):
+
+            st.json(
+                git
+            )
+
+    else:
+
+        st.info(
+            "Git information is not currently available."
+        )
+
+    # =====================================================================
+    # SYSTEM STATUS
+    # =====================================================================
+
+    st.header(
+        "System Status"
+    )
+
+    status_col1, status_col2, status_col3 = st.columns(3)
+
+    with status_col1:
+
+        st.success(
+            "Streamlit UI active"
+        )
+
+    with status_col2:
+
+        st.success(
+            "Native rendering enabled"
+        )
+
+    with status_col3:
+
+        st.success(
+            "HTML UI disabled"
+        )
+
+    # =====================================================================
+    # DATA SOURCE
+    # =====================================================================
+
+    with st.expander(
+        "Dashboard Data Sources",
+        expanded=False,
+    ):
+
+        st.write(
+            "Project Control"
+        )
+
+        st.write(
+            "Loaded through load_project_control()"
+        )
+
+        st.write(
+            "Project State"
+        )
+
+        st.write(
+            "Loaded through load_state()"
+        )
+
+        st.write(
+            "Project Events"
+        )
+
+        st.write(
+            "Loaded through load_events()"
+        )
+
+        st.write(
+            "Git"
+        )
+
+        st.write(
+            "Loaded through git_info()"
+        )
+
+
+# =============================================================================
+# ENTRY POINT
+# =============================================================================
 
 if __name__ == "__main__":
     render_dashboard()
