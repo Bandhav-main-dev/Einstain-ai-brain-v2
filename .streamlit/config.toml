@@ -1,0 +1,22 @@
+[theme]
+
+# Zanpakuto / Bleach inspired command-center palette
+base = "dark"
+
+primaryColor = "#B11226"
+
+backgroundColor = "#050505"
+
+secondaryBackgroundColor = "#111111"
+
+textColor = "#F4F1EA"
+
+font = "sans serif"
+
+[server]
+
+headless = true
+
+[client]
+
+showErrorDetails = "minimal"

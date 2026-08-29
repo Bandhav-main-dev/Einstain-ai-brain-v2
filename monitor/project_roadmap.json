@@ -1,0 +1,292 @@
+{
+  "project": {
+    "name": "Einstein AI V2",
+    "codename": "Zanpakutō",
+    "description": "A controlled AI research and reasoning system inspired by Einstein's documented scientific work, reasoning patterns, and interdisciplinary problem-solving.",
+    "vision": "Build an AI system capable of structured scientific reasoning, creative hypothesis generation, evidence-based analysis, and complex problem solving.",
+    "current_phase": "0.6.4-U1",
+    "overall_progress": 58,
+    "status": "MONITORING SYSTEM ACTIVE"
+  },
+  "roadmap": [
+    {
+      "id": "0.1",
+      "title": "Project Foundation",
+      "status": "COMPLETED",
+      "progress": 100,
+      "priority": "HIGH",
+      "purpose": "Establish the base Einstein AI V2 repository and architecture.",
+      "completed": [
+        "Repository initialized",
+        "Core project structure established",
+        "Python entry point created",
+        "Initial CI structure created",
+        "Development branches established"
+      ],
+      "remaining": [],
+      "deliverables": [
+        "einstein_v2.py",
+        "README.md",
+        "requirements.txt",
+        ".github/workflows/ci.yml"
+      ],
+      "dependencies": [],
+      "next_action": "Use the foundation for monitoring and cognitive-system development.",
+      "notes": "Foundation is operational."
+    },
+    {
+      "id": "0.2",
+      "title": "V1 Evidence Integration",
+      "status": "COMPLETED",
+      "progress": 100,
+      "priority": "HIGH",
+      "purpose": "Carry validated Einstein Brain V1 evidence into V2.",
+      "completed": [
+        "V1 evidence inventory identified",
+        "Source manifests reviewed",
+        "Validated extraction artifacts identified",
+        "V1 → V2 acquisition planning established"
+      ],
+      "remaining": [],
+      "deliverables": [
+        "Evidence inventory",
+        "Acquisition planning",
+        "Validated source artifacts"
+      ],
+      "dependencies": [
+        "Einstein Brain V1"
+      ],
+      "next_action": "Use validated evidence as the foundation for V2 data pipelines.",
+      "notes": "V1 evidence is treated as source material, not biological reconstruction."
+    },
+    {
+      "id": "0.3",
+      "title": "Cognitive Reconstruction Specification",
+      "status": "COMPLETED",
+      "progress": 100,
+      "priority": "HIGH",
+      "purpose": "Define the cognitive architecture that V2 will implement.",
+      "completed": [
+        "20 cognitive modules defined",
+        "6 memory systems defined",
+        "10 evaluation dimensions defined",
+        "Biological reconstruction explicitly excluded"
+      ],
+      "remaining": [],
+      "deliverables": [
+        "Cognitive module specification",
+        "Memory-system specification",
+        "Evaluation framework"
+      ],
+      "dependencies": [
+        "V1 evidence"
+      ],
+      "next_action": "Map evidence into the defined cognitive modules.",
+      "notes": "Architecture describes computational behavior, not Einstein's actual brain."
+    },
+    {
+      "id": "0.4",
+      "title": "Data Acquisition & Validation",
+      "status": "COMPLETED",
+      "progress": 100,
+      "priority": "HIGH",
+      "purpose": "Acquire and validate research resources for the V2 corpus.",
+      "completed": [
+        "Master source manifest created",
+        "Source classes defined",
+        "Reasoning types defined",
+        "Expert categories defined",
+        "Candidate resources discovered",
+        "Acquisition validation performed"
+      ],
+      "remaining": [],
+      "deliverables": [
+        "v2_master_sources.csv",
+        "Acquisition manifests",
+        "Validated resource inventory"
+      ],
+      "dependencies": [
+        "Project foundation",
+        "V1 evidence"
+      ],
+      "next_action": "Prepare validated evidence for cognitive processing.",
+      "notes": "Resource quality and provenance remain controlled."
+    },
+    {
+      "id": "0.5",
+      "title": "Extraction & Research Corpus",
+      "status": "COMPLETED",
+      "progress": 100,
+      "priority": "HIGH",
+      "purpose": "Convert research resources into usable structured evidence.",
+      "completed": [
+        "PDF and HTML candidates processed",
+        "OCR pipeline used where required",
+        "Equation-heavy material identified",
+        "Formula reconciliation performed",
+        "Extraction validation completed"
+      ],
+      "remaining": [],
+      "deliverables": [
+        "Extracted research text",
+        "OCR artifacts",
+        "Formula candidates",
+        "Validation manifests"
+      ],
+      "dependencies": [
+        "Data acquisition"
+      ],
+      "next_action": "Connect extracted evidence to reasoning modules.",
+      "notes": "Extraction quality must remain traceable to original sources."
+    },
+    {
+      "id": "0.6",
+      "title": "Monitoring System",
+      "status": "IN PROGRESS",
+      "progress": 75,
+      "priority": "CRITICAL",
+      "purpose": "Give the owner complete visibility and control over project progress.",
+      "completed": [
+        "Owner dashboard created",
+        "Owner authentication/dashboard foundations created",
+        "Monitoring branch established",
+        "Project progress monitoring implemented",
+        "Completed-work tracking implemented",
+        "Remaining-work tracking implemented",
+        "Next-mission display implemented",
+        "Zanpakutō visual theme implemented",
+        "Project event monitoring implemented"
+      ],
+      "remaining": [
+        "Complete compact roadmap interface",
+        "Connect roadmap entirely to JSON",
+        "Add detailed step inspection",
+        "Add owner-editable project planning data",
+        "Improve project-level progress visualization"
+      ],
+      "deliverables": [
+        "monitor/owner_dashboard.py",
+        "monitor/project_roadmap.json",
+        "Project event tracking"
+      ],
+      "dependencies": [
+        "Project foundation"
+      ],
+      "next_action": "Finish the owner command center and make the roadmap data-driven.",
+      "notes": "This is the current active engineering area."
+    },
+    {
+      "id": "0.7",
+      "title": "Reasoning Engine",
+      "status": "PLANNED",
+      "progress": 0,
+      "priority": "CRITICAL",
+      "purpose": "Implement structured reasoning capabilities inspired by Einstein's documented methods.",
+      "completed": [],
+      "remaining": [
+        "Define reasoning pipelines",
+        "Implement problem decomposition",
+        "Implement assumption analysis",
+        "Implement analogy generation",
+        "Implement hypothesis generation",
+        "Implement mathematical reasoning",
+        "Implement contradiction checking",
+        "Implement solution comparison"
+      ],
+      "deliverables": [
+        "Reasoning engine",
+        "Reasoning modules",
+        "Evaluation tests"
+      ],
+      "dependencies": [
+        "Cognitive reconstruction",
+        "Validated research corpus"
+      ],
+      "next_action": "Design the first reasoning pipeline.",
+      "notes": "The goal is computational emulation of reasoning patterns, not imitation of a person's private mental state."
+    },
+    {
+      "id": "0.8",
+      "title": "Memory Architecture",
+      "status": "PLANNED",
+      "progress": 0,
+      "priority": "HIGH",
+      "purpose": "Implement structured memory systems for research and reasoning.",
+      "completed": [],
+      "remaining": [
+        "Implement working memory",
+        "Implement episodic research memory",
+        "Implement semantic knowledge memory",
+        "Implement source provenance memory",
+        "Implement reasoning trace memory",
+        "Implement long-term knowledge retrieval"
+      ],
+      "deliverables": [
+        "Memory manager",
+        "Knowledge store",
+        "Retrieval layer"
+      ],
+      "dependencies": [
+        "Cognitive reconstruction",
+        "Reasoning engine"
+      ],
+      "next_action": "Define memory schemas and retrieval contracts.",
+      "notes": "Memory must preserve evidence provenance."
+    },
+    {
+      "id": "0.9",
+      "title": "Mixture-of-Experts Architecture",
+      "status": "PLANNED",
+      "progress": 0,
+      "priority": "HIGH",
+      "purpose": "Separate major reasoning capabilities into specialized experts.",
+      "completed": [],
+      "remaining": [
+        "Define expert boundaries",
+        "Build specialist reasoning modules",
+        "Implement routing",
+        "Implement expert evaluation",
+        "Implement expert collaboration"
+      ],
+      "deliverables": [
+        "Expert modules",
+        "Router",
+        "Expert evaluation framework"
+      ],
+      "dependencies": [
+        "Reasoning engine",
+        "Memory architecture"
+      ],
+      "next_action": "Define the first expert taxonomy.",
+      "notes": "MOE should be introduced after the core reasoning architecture is stable."
+    },
+    {
+      "id": "1.0",
+      "title": "Integrated Einstein AI V2",
+      "status": "PLANNED",
+      "progress": 0,
+      "priority": "CRITICAL",
+      "purpose": "Integrate evidence, memory, reasoning, experts, evaluation, and monitoring.",
+      "completed": [],
+      "remaining": [
+        "Integrate cognitive modules",
+        "Integrate memory",
+        "Integrate reasoning",
+        "Integrate expert routing",
+        "Build end-to-end evaluation",
+        "Run scientific reasoning benchmarks",
+        "Document final architecture"
+      ],
+      "deliverables": [
+        "Integrated Einstein AI V2",
+        "Evaluation suite",
+        "Architecture documentation"
+      ],
+      "dependencies": [
+        "All previous phases"
+      ],
+      "next_action": "Begin integration after the core modules are stable.",
+      "notes": "This is the long-term project target."
+    }
+  ]
+}

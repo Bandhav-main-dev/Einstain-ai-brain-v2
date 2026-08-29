@@ -1,0 +1,500 @@
+{
+  "schema_version": "2.0",
+  "project": {
+    "name": "Einstein AI V2",
+    "codename": "Zanpakuto",
+    "description": "A research-oriented AI system designed to study and reproduce useful patterns of scientific reasoning, problem solving, creative hypothesis generation, evidence evaluation and iterative research workflows inspired by Einstein's work.",
+    "current_phase": "0.6.4-U1",
+    "overall_progress": 58,
+    "health": "STABLE",
+    "owner_mode": true
+  },
+  "current_mission": {
+    "id": "MISSION-0.6.5",
+    "title": "Build the Project Control Engine",
+    "status": "active",
+    "objective": "Turn the Owner Command Center into the central project-control interface for understanding what has been completed, what is currently being built, what remains, and what should happen next.",
+    "why": "The project is becoming large enough that progress, dependencies, deliverables and future work must be visible from one place.",
+    "tasks": [
+      "Maintain a structured project roadmap",
+      "Track completed and remaining work",
+      "Track the current mission",
+      "Track dependencies between phases",
+      "Track expected deliverables",
+      "Expose the exact next action to the owner",
+      "Keep project status editable through JSON"
+    ],
+    "expected_output": [
+      "project_control.json",
+      "Owner Command Center",
+      "Detailed roadmap",
+      "Next-mission panel"
+    ]
+  },
+  "status_definitions": {
+    "completed": "Work has been completed and validated.",
+    "active": "Currently being developed or integrated.",
+    "planned": "Planned but not started.",
+    "blocked": "Cannot proceed until a dependency is resolved.",
+    "locked": "Intentionally held until prerequisite work is complete."
+  },
+  "roadmap": [
+    {
+      "id": "0.1",
+      "name": "Project Foundation",
+      "status": "completed",
+      "progress": 100,
+      "priority": "critical",
+      "summary": "Establish the Einstein AI V2 repository and engineering foundation.",
+      "what_done": [
+        "Repository structure established",
+        "Core Python entry point established",
+        "Development branches established",
+        "CI foundation established",
+        "Basic testing infrastructure established"
+      ],
+      "remaining": [],
+      "plan": [
+        "Maintain repository structure",
+        "Keep project documentation synchronized",
+        "Protect the stable foundation"
+      ],
+      "deliverables": [
+        "einstein_v2.py",
+        "requirements.txt",
+        "README.md",
+        ".github/workflows/ci.yml"
+      ],
+      "dependencies": [],
+      "next_action": "Maintain foundation while higher-level systems are developed."
+    },
+    {
+      "id": "0.2",
+      "name": "Data Architecture",
+      "status": "completed",
+      "progress": 100,
+      "priority": "critical",
+      "summary": "Establish the source, evidence and dataset architecture.",
+      "what_done": [
+        "V2 master source manifest established",
+        "Cognitive module inventory established",
+        "Evidence inventory planning established",
+        "V1-to-V2 evidence relationship defined"
+      ],
+      "remaining": [
+        "Continue expanding high-quality research evidence"
+      ],
+      "plan": [
+        "Validate sources",
+        "Track provenance",
+        "Separate raw evidence from processed datasets",
+        "Preserve reproducibility"
+      ],
+      "deliverables": [
+        "v2_master_sources.csv",
+        "Evidence inventories",
+        "Source metadata"
+      ],
+      "dependencies": [
+        "Project Foundation"
+      ],
+      "next_action": "Maintain source quality as new evidence is acquired."
+    },
+    {
+      "id": "0.3",
+      "name": "Evidence Extraction",
+      "status": "completed",
+      "progress": 100,
+      "priority": "high",
+      "summary": "Extract usable scientific evidence from source documents.",
+      "what_done": [
+        "Candidate URL discovery completed",
+        "Controlled acquisition completed",
+        "PDF and HTML resources classified",
+        "OCR workflow established",
+        "Formula reconciliation workflow established"
+      ],
+      "remaining": [
+        "Expand validated evidence coverage where required"
+      ],
+      "plan": [
+        "Acquire evidence",
+        "Validate artifacts",
+        "Extract text",
+        "Preserve equations",
+        "Record provenance"
+      ],
+      "deliverables": [
+        "Validated source artifacts",
+        "Extraction manifests",
+        "OCR outputs",
+        "Evidence records"
+      ],
+      "dependencies": [
+        "Data Architecture"
+      ],
+      "next_action": "Use validated evidence as input to the cognitive reconstruction layer."
+    },
+    {
+      "id": "0.4",
+      "name": "Cognitive Reconstruction",
+      "status": "completed",
+      "progress": 100,
+      "priority": "critical",
+      "summary": "Define the cognitive architecture used by Einstein AI V2.",
+      "what_done": [
+        "20 cognitive modules defined",
+        "6 memory systems defined",
+        "10 evaluation dimensions defined",
+        "Biological reconstruction explicitly not claimed"
+      ],
+      "remaining": [
+        "Implement and evaluate cognitive modules"
+      ],
+      "plan": [
+        "Convert specifications into computational modules",
+        "Connect evidence to reasoning modules",
+        "Define module evaluation",
+        "Measure reasoning quality"
+      ],
+      "deliverables": [
+        "Cognitive module specifications",
+        "Memory architecture",
+        "Evaluation dimensions"
+      ],
+      "dependencies": [
+        "Evidence Extraction"
+      ],
+      "next_action": "Implement the computational cognitive architecture."
+    },
+    {
+      "id": "0.5",
+      "name": "Reasoning Architecture",
+      "status": "completed",
+      "progress": 100,
+      "priority": "critical",
+      "summary": "Define how multiple reasoning capabilities work together.",
+      "what_done": [
+        "Reasoning types catalogued",
+        "Expert roles identified",
+        "Future mixture-of-experts direction established",
+        "Scientific reasoning treated as a multi-stage process"
+      ],
+      "remaining": [
+        "Implement expert routing",
+        "Implement reasoning evaluation"
+      ],
+      "plan": [
+        "Create specialist reasoning modules",
+        "Create routing layer",
+        "Combine expert outputs",
+        "Evaluate disagreements",
+        "Generate final synthesis"
+      ],
+      "deliverables": [
+        "Reasoning modules",
+        "Expert definitions",
+        "Routing architecture"
+      ],
+      "dependencies": [
+        "Cognitive Reconstruction"
+      ],
+      "next_action": "Move from specification into executable reasoning modules."
+    },
+    {
+      "id": "0.6",
+      "name": "Monitoring Infrastructure",
+      "status": "completed",
+      "progress": 100,
+      "priority": "high",
+      "summary": "Create visibility into project progress and engineering state.",
+      "what_done": [
+        "Owner dashboard created",
+        "Monitoring branch established",
+        "Project events supported",
+        "System telemetry supported",
+        "Owner-focused dashboard established"
+      ],
+      "remaining": [
+        "Connect project-control data to every future phase"
+      ],
+      "plan": [
+        "Maintain project-control JSON",
+        "Record major project events",
+        "Expose progress and mission state",
+        "Keep owner view concise"
+      ],
+      "deliverables": [
+        "monitor/owner_dashboard.py",
+        "monitor/project_control.json"
+      ],
+      "dependencies": [
+        "Project Foundation"
+      ],
+      "next_action": "Use the command center as the project-control interface."
+    },
+    {
+      "id": "0.6.4-U1",
+      "name": "Owner Command Center",
+      "status": "completed",
+      "progress": 100,
+      "priority": "high",
+      "summary": "Create a compact Zanpakuto-inspired owner interface.",
+      "what_done": [
+        "Owner Command Center created",
+        "Zanpakuto visual identity added",
+        "Red, black, white and gold visual system added",
+        "Roadmap display added",
+        "Completed work display added",
+        "Remaining work display added",
+        "Next mission display added",
+        "Project information added"
+      ],
+      "remaining": [],
+      "plan": [
+        "Keep the interface compact",
+        "Improve information hierarchy",
+        "Use JSON as the roadmap source of truth"
+      ],
+      "deliverables": [
+        "Owner Command Center",
+        "Project control JSON"
+      ],
+      "dependencies": [
+        "Monitoring Infrastructure"
+      ],
+      "next_action": "Advance to Project Control Engine improvements."
+    },
+    {
+      "id": "0.6.5",
+      "name": "Project Control Engine",
+      "status": "active",
+      "progress": 45,
+      "priority": "critical",
+      "summary": "Make the Owner Command Center the central source for understanding project state, work remaining and next actions.",
+      "what_done": [
+        "Project control JSON created",
+        "Roadmap schema created",
+        "Current mission schema created",
+        "Detailed step metadata created",
+        "Owner dashboard connected to control data"
+      ],
+      "remaining": [
+        "Add richer dependency tracking",
+        "Add milestone tracking",
+        "Add phase-level progress aggregation",
+        "Add owner notes",
+        "Add clearer blocked-state handling"
+      ],
+      "plan": [
+        "Expand project_control.json",
+        "Add dependency-aware roadmap rendering",
+        "Add milestone summaries",
+        "Add owner notes",
+        "Add progress calculations",
+        "Validate dashboard against project data"
+      ],
+      "deliverables": [
+        "monitor/project_control.json",
+        "Project Control Engine",
+        "Detailed roadmap interface"
+      ],
+      "dependencies": [
+        "Owner Command Center"
+      ],
+      "next_action": "Complete dependency and milestone tracking."
+    },
+    {
+      "id": "0.7",
+      "name": "Computational Cognitive System",
+      "status": "planned",
+      "progress": 0,
+      "priority": "critical",
+      "summary": "Convert the cognitive reconstruction specification into executable AI modules.",
+      "what_done": [],
+      "remaining": [
+        "Implement cognitive modules",
+        "Implement memory systems",
+        "Implement reasoning interfaces",
+        "Implement module evaluation"
+      ],
+      "plan": [
+        "Implement modules incrementally",
+        "Unit-test each module",
+        "Connect modules through controlled interfaces",
+        "Evaluate reasoning behaviour",
+        "Record evidence for each result"
+      ],
+      "deliverables": [
+        "Cognitive engine",
+        "Memory engine",
+        "Reasoning interfaces",
+        "Evaluation suite"
+      ],
+      "dependencies": [
+        "Cognitive Reconstruction",
+        "Reasoning Architecture",
+        "Project Control Engine"
+      ],
+      "next_action": "Begin implementation of the first computational cognitive modules."
+    },
+    {
+      "id": "0.8",
+      "name": "Training and Evaluation",
+      "status": "planned",
+      "progress": 0,
+      "priority": "critical",
+      "summary": "Build the training, evaluation and comparison pipeline for the cognitive and reasoning architecture.",
+      "what_done": [],
+      "remaining": [
+        "Dataset preparation",
+        "Training pipeline",
+        "Evaluation pipeline",
+        "Baseline comparison",
+        "Reasoning benchmark"
+      ],
+      "plan": [
+        "Prepare training records",
+        "Create validation split",
+        "Train candidate models",
+        "Evaluate reasoning",
+        "Compare against baselines",
+        "Record results"
+      ],
+      "deliverables": [
+        "Training datasets",
+        "Training pipeline",
+        "Evaluation reports",
+        "Benchmarks"
+      ],
+      "dependencies": [
+        "Computational Cognitive System"
+      ],
+      "next_action": "Prepare the first controlled training dataset."
+    },
+    {
+      "id": "0.9",
+      "name": "Mixture of Experts",
+      "status": "planned",
+      "progress": 0,
+      "priority": "high",
+      "summary": "Combine specialist reasoning capabilities through an expert-routing architecture.",
+      "what_done": [],
+      "remaining": [
+        "Expert models",
+        "Routing mechanism",
+        "Expert disagreement handling",
+        "Synthesis layer",
+        "Evaluation"
+      ],
+      "plan": [
+        "Implement specialist experts",
+        "Build router",
+        "Measure expert selection",
+        "Combine expert outputs",
+        "Evaluate synthesis quality"
+      ],
+      "deliverables": [
+        "Expert modules",
+        "Router",
+        "Synthesis engine",
+        "MOE evaluation"
+      ],
+      "dependencies": [
+        "Training and Evaluation"
+      ],
+      "next_action": "Design specialist expert interfaces."
+    },
+    {
+      "id": "1.0",
+      "name": "Research Reasoning Platform",
+      "status": "planned",
+      "progress": 0,
+      "priority": "critical",
+      "summary": "Create the integrated research assistant capable of structured scientific investigation and complex problem solving.",
+      "what_done": [],
+      "remaining": [
+        "Research workflow",
+        "Hypothesis generation",
+        "Evidence analysis",
+        "Experiment planning",
+        "Reasoning synthesis",
+        "Final system evaluation"
+      ],
+      "plan": [
+        "Integrate cognitive system",
+        "Integrate reasoning experts",
+        "Integrate evidence retrieval",
+        "Implement research workflow",
+        "Evaluate complex problems",
+        "Document limitations"
+      ],
+      "deliverables": [
+        "Integrated Einstein AI V2",
+        "Research workflow",
+        "Evaluation suite",
+        "Final technical documentation"
+      ],
+      "dependencies": [
+        "Mixture of Experts"
+      ],
+      "next_action": "Integrate the complete research reasoning pipeline."
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "Foundation",
+      "status": "completed",
+      "target": "Repository and engineering foundation"
+    },
+    {
+      "id": "M2",
+      "name": "Evidence Layer",
+      "status": "completed",
+      "target": "Validated scientific evidence"
+    },
+    {
+      "id": "M3",
+      "name": "Cognitive Architecture",
+      "status": "completed",
+      "target": "Cognitive and reasoning specifications"
+    },
+    {
+      "id": "M4",
+      "name": "Owner Control",
+      "status": "completed",
+      "target": "Owner project command center"
+    },
+    {
+      "id": "M5",
+      "name": "Executable Cognitive System",
+      "status": "planned",
+      "target": "Computational cognitive modules"
+    },
+    {
+      "id": "M6",
+      "name": "Training",
+      "status": "planned",
+      "target": "Training and evaluation pipeline"
+    },
+    {
+      "id": "M7",
+      "name": "MOE",
+      "status": "planned",
+      "target": "Mixture-of-experts reasoning"
+    },
+    {
+      "id": "M8",
+      "name": "Research Platform",
+      "status": "planned",
+      "target": "Integrated research reasoning system"
+    }
+  ],
+  "owner_notes": [
+    "The roadmap is controlled through monitor/project_control.json.",
+    "Completed work should be preserved as evidence rather than overwritten.",
+    "Do not mark a step completed until its required deliverables are validated.",
+    "The Owner Command Center is for project understanding and control, not developer tooling."
+  ]
+}
