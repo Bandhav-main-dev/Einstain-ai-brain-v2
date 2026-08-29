@@ -518,7 +518,8 @@ def render_dashboard() -> None:
     )
 
     progress = overall_progress(
-        steps
+        control,
+        steps,
     )
 
     active_step = first_active_step(
