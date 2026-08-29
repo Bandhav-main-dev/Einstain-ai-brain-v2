@@ -1,0 +1,311 @@
+{
+  "project": "Einstein AI V2",
+  "version": "2.0",
+  "dashboard": "Owner Zanpakutō Command Center",
+  "overall_progress": 58,
+  "status": "IN DEVELOPMENT",
+  "current_step": "Phase 0.6.4-U1 — Owner Monitoring System",
+  "next_mission": "Complete monitoring system integration and advance to the next engineering phase.",
+  "last_updated": "2026-08-29",
+  "steps": [
+    {
+      "id": "P0",
+      "name": "Project Foundation",
+      "status": "completed",
+      "progress": 100,
+      "summary": "Repository, project structure, baseline configuration and development workflow established.",
+      "what_it_does": "Creates the foundation required to safely develop Einstein AI V2.",
+      "completed": [
+        "Repository initialized",
+        "Project structure established",
+        "Python entry point created",
+        "Basic CI workflow established"
+      ],
+      "remaining": [],
+      "next_actions": [
+        "Maintain the foundation while higher-level systems are developed."
+      ],
+      "deliverables": [
+        "einstein_v2.py",
+        "requirements.txt",
+        "README.md",
+        ".github/workflows/ci.yml"
+      ],
+      "dependencies": []
+    },
+    {
+      "id": "P1",
+      "name": "V2 Data Architecture",
+      "status": "completed",
+      "progress": 100,
+      "summary": "Defined the V2 evidence, source and cognitive-data organization.",
+      "what_it_does": "Provides structured data organization for future cognitive and reasoning systems.",
+      "completed": [
+        "V2 source manifest created",
+        "Source classes defined",
+        "Reasoning types defined",
+        "Expert/source structure defined"
+      ],
+      "remaining": [],
+      "next_actions": [
+        "Expand validated data as new research sources are acquired."
+      ],
+      "deliverables": [
+        "v2_master_sources.csv",
+        "V2 data specifications"
+      ],
+      "dependencies": [
+        "Project Foundation"
+      ]
+    },
+    {
+      "id": "P2",
+      "name": "Cognitive Reconstruction",
+      "status": "completed",
+      "progress": 100,
+      "summary": "Defined the cognitive reconstruction architecture without claiming biological brain reconstruction.",
+      "what_it_does": "Models reasoning-related capabilities as software modules rather than attempting to reproduce a biological brain.",
+      "completed": [
+        "20 cognitive modules defined",
+        "6 memory systems defined",
+        "10 evaluation dimensions defined",
+        "Biological reconstruction explicitly excluded"
+      ],
+      "remaining": [],
+      "next_actions": [
+        "Connect cognitive modules to future reasoning pipelines."
+      ],
+      "deliverables": [
+        "Cognitive reconstruction specification"
+      ],
+      "dependencies": [
+        "V2 Data Architecture"
+      ]
+    },
+    {
+      "id": "P3",
+      "name": "Evidence Acquisition",
+      "status": "completed",
+      "progress": 100,
+      "summary": "Established the controlled acquisition pipeline for research and evidence sources.",
+      "what_it_does": "Finds, validates and stores source material that can later support model development.",
+      "completed": [
+        "Candidate discovery completed",
+        "259 candidate records identified",
+        "11 unique resources identified",
+        "8 resources successfully acquired",
+        "Blocked resources recorded"
+      ],
+      "remaining": [
+        "Continue acquisition when additional authoritative sources are required."
+      ],
+      "next_actions": [
+        "Expand the evidence corpus when required by later reasoning modules."
+      ],
+      "deliverables": [
+        "Acquisition manifests",
+        "Raw research corpus",
+        "Integrity reports"
+      ],
+      "dependencies": [
+        "V2 Data Architecture"
+      ]
+    },
+    {
+      "id": "P4",
+      "name": "Research Extraction",
+      "status": "completed",
+      "progress": 100,
+      "summary": "Research documents were processed through controlled extraction and validation workflows.",
+      "what_it_does": "Converts source documents into usable research evidence while preserving validation information.",
+      "completed": [
+        "PDF/HTML extraction workflow established",
+        "OCR workflow established",
+        "Scanned document validation completed",
+        "Formula candidates identified",
+        "Extraction validation performed"
+      ],
+      "remaining": [
+        "Perform additional extraction as the corpus grows."
+      ],
+      "next_actions": [
+        "Feed validated evidence into future dataset construction."
+      ],
+      "deliverables": [
+        "Extraction manifests",
+        "OCR outputs",
+        "Validation reports"
+      ],
+      "dependencies": [
+        "Evidence Acquisition"
+      ]
+    },
+    {
+      "id": "P5",
+      "name": "Reasoning Dataset Construction",
+      "status": "in_progress",
+      "progress": 70,
+      "summary": "Transform validated research evidence into structured examples for reasoning and evaluation.",
+      "what_it_does": "Creates training and evaluation material focused on reasoning patterns rather than simply storing documents.",
+      "completed": [
+        "Dataset planning established",
+        "Reasoning categories identified",
+        "Evidence organization established"
+      ],
+      "remaining": [
+        "Construct structured reasoning examples",
+        "Add positive and negative reasoning examples",
+        "Create evaluation splits",
+        "Validate dataset quality"
+      ],
+      "next_actions": [
+        "Define dataset schemas",
+        "Generate reasoning examples",
+        "Run quality validation",
+        "Freeze the first usable dataset version"
+      ],
+      "deliverables": [
+        "Reasoning dataset",
+        "Dataset manifest",
+        "Quality report"
+      ],
+      "dependencies": [
+        "Research Extraction",
+        "Cognitive Reconstruction"
+      ]
+    },
+    {
+      "id": "P6",
+      "name": "Reasoning Engine",
+      "status": "planned",
+      "progress": 20,
+      "summary": "Build the software reasoning pipeline that can decompose problems, generate hypotheses and evaluate alternatives.",
+      "what_it_does": "Forms the core problem-solving layer of Einstein AI V2.",
+      "completed": [
+        "High-level reasoning architecture planned"
+      ],
+      "remaining": [
+        "Problem decomposition",
+        "Hypothesis generation",
+        "Alternative generation",
+        "Evidence comparison",
+        "Counterexample search",
+        "Self-critique",
+        "Final synthesis"
+      ],
+      "next_actions": [
+        "Implement the first reasoning pipeline",
+        "Connect structured research evidence",
+        "Create reasoning evaluation benchmarks"
+      ],
+      "deliverables": [
+        "Reasoning engine",
+        "Reasoning evaluation suite"
+      ],
+      "dependencies": [
+        "Reasoning Dataset Construction"
+      ]
+    },
+    {
+      "id": "P7",
+      "name": "Memory Architecture",
+      "status": "planned",
+      "progress": 10,
+      "summary": "Implement persistent knowledge, working memory and episodic/project memory.",
+      "what_it_does": "Allows the system to retain useful project knowledge and reasoning history.",
+      "completed": [
+        "Memory architecture concept defined"
+      ],
+      "remaining": [
+        "Working memory",
+        "Semantic memory",
+        "Episodic memory",
+        "Research memory",
+        "Project memory",
+        "Retrieval strategy"
+      ],
+      "next_actions": [
+        "Define memory schemas",
+        "Implement storage layer",
+        "Implement retrieval and ranking"
+      ],
+      "deliverables": [
+        "Memory subsystem",
+        "Memory schemas",
+        "Retrieval engine"
+      ],
+      "dependencies": [
+        "Reasoning Engine"
+      ]
+    },
+    {
+      "id": "P8",
+      "name": "Mixture-of-Experts Architecture",
+      "status": "planned",
+      "progress": 5,
+      "summary": "Separate major capabilities into specialized reasoning experts coordinated by an orchestration layer.",
+      "what_it_does": "Allows different expert modules to specialize in physics, mathematics, research analysis, creativity and other reasoning domains.",
+      "completed": [
+        "MoE concept selected"
+      ],
+      "remaining": [
+        "Define expert boundaries",
+        "Implement expert interfaces",
+        "Build routing/orchestration",
+        "Create expert evaluation",
+        "Implement conflict resolution"
+      ],
+      "next_actions": [
+        "Finalize expert taxonomy",
+        "Define shared expert API",
+        "Build first specialist expert"
+      ],
+      "deliverables": [
+        "Expert modules",
+        "Router",
+        "MoE orchestration layer"
+      ],
+      "dependencies": [
+        "Reasoning Engine",
+        "Memory Architecture"
+      ]
+    },
+    {
+      "id": "P9",
+      "name": "Monitoring + Owner Control Center",
+      "status": "in_progress",
+      "progress": 75,
+      "summary": "Build a project command center that tells the owner what has been completed, what remains and what should happen next.",
+      "what_it_does": "Provides project-level visibility and control without exposing unnecessary developer controls.",
+      "completed": [
+        "Owner dashboard created",
+        "Zanpakutō visual theme created",
+        "Project roadmap added",
+        "Completed/remaining work views added",
+        "Project events added",
+        "Project control JSON added",
+        "Compact dashboard layout implemented"
+      ],
+      "remaining": [
+        "Improve visual hierarchy",
+        "Connect more live project state",
+        "Add milestone history",
+        "Add richer mission details"
+      ],
+      "next_actions": [
+        "Review dashboard visually",
+        "Commit approved dashboard",
+        "Push monitoring branch",
+        "Continue project engineering from NEXT MISSION"
+      ],
+      "deliverables": [
+        "monitor/owner_dashboard.py",
+        "monitor/project_control.json",
+        "monitoring event logs"
+      ],
+      "dependencies": [
+        "Project Foundation"
+      ]
+    }
+  ]
+}
