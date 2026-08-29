@@ -1,5 +1,5 @@
 """
-Einstein AI V2 — Owner Monitoring Dashboard
+Einstein AI V2 — Owner Command Center.
 
 Run from the repository root:
 
@@ -24,13 +24,19 @@ import streamlit as st
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 MONITOR_DIR = PROJECT_ROOT / "monitor"
 
+# Legacy/canonical paths retained for compatibility with the existing tests.
+STATE_FILE = PROJECT_ROOT / "logs" / "project_state.json"
+EVENT_FILE = PROJECT_ROOT / "logs" / "project_events.jsonl"
+
 STATE_CANDIDATES = [
+    STATE_FILE,
     PROJECT_ROOT / "project_state.json",
     MONITOR_DIR / "project_state.json",
     PROJECT_ROOT / "data" / "project_state.json",
 ]
 
 EVENT_CANDIDATES = [
+    EVENT_FILE,
     PROJECT_ROOT / "audit_events.jsonl",
     PROJECT_ROOT / "monitoring_events.jsonl",
     MONITOR_DIR / "audit_events.jsonl",
@@ -43,7 +49,7 @@ EVENT_CANDIDATES = [
 # ============================================================================
 
 st.set_page_config(
-    page_title="Einstein AI V2 — Owner Dashboard",
+    page_title="Einstein AI V2 — Owner Command Center",
     page_icon="🧠",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -55,7 +61,7 @@ st.set_page_config(
 # ============================================================================
 
 def inject_theme() -> None:
-    """Apply the dashboard visual theme."""
+    """Apply the owner dashboard visual theme."""
 
     st.markdown(
         """
@@ -65,8 +71,9 @@ def inject_theme() -> None:
         }
 
         .dashboard-title {
-            font-size: 2.4rem;
-            font-weight: 700;
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: 0.02em;
             margin-bottom: 0.2rem;
         }
 
@@ -77,11 +84,18 @@ def inject_theme() -> None:
         }
 
         .dashboard-card {
-            border: 1px solid rgba(128,128,128,0.25);
+            border: 1px solid rgba(128, 128, 128, 0.25);
             border-radius: 14px;
             padding: 1rem;
-            margin-bottom: 1rem;
-            background: rgba(128,128,128,0.06);
+            margin-bottom: 0.8rem;
+            background: rgba(128, 128, 128, 0.06);
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-top: 0.5rem;
+            margin-bottom: 0.8rem;
         }
 
         .small-text {
@@ -113,7 +127,7 @@ def find_first_existing(paths: list[Path]) -> Path | None:
 # ============================================================================
 
 def load_json(path: Path) -> dict[str, Any]:
-    """Load a JSON object."""
+    """Load a JSON object safely."""
 
     try:
         with path.open("r", encoding="utf-8") as handle:
@@ -122,14 +136,14 @@ def load_json(path: Path) -> dict[str, Any]:
         if isinstance(data, dict):
             return data
 
-        return {"data": data}
+        return {}
 
-    except (OSError, json.JSONDecodeError) as exc:
-        return {"error": str(exc)}
+    except (OSError, json.JSONDecodeError):
+        return {}
 
 
 def load_jsonl(path: Path) -> list[dict[str, Any]]:
-    """Load JSON Lines events."""
+    """Load JSON Lines events safely."""
 
     events: list[dict[str, Any]] = []
 
@@ -156,53 +170,65 @@ def load_jsonl(path: Path) -> list[dict[str, Any]]:
     return events
 
 
-# ============================================================================
-# PROJECT STATE
-# ============================================================================
-
 def load_project_state() -> dict[str, Any]:
-    """Load project state with a safe fallback."""
+    """
+    Load the project state.
 
-    state_path = find_first_existing(STATE_CANDIDATES)
+    STATE_FILE is checked first so existing monitoring tests and
+    monitoring components can override it safely.
+    """
 
-    if state_path is not None:
-        state = load_json(state_path)
+    if STATE_FILE.exists():
+        return load_json(STATE_FILE)
 
-        if "error" not in state:
-            return state
+    state_path = find_first_existing(
+        [
+            path
+            for path in STATE_CANDIDATES
+            if path != STATE_FILE
+        ]
+    )
 
-    return {
-        "project": "Einstein AI V2",
-        "version": "0.1.0",
-        "status": "ACTIVE",
-        "phase": "Monitoring System",
-        "progress": 0,
-        "state_source": "live fallback",
-    }
+    if state_path is None:
+        return {}
+
+    return load_json(state_path)
 
 
-# ============================================================================
-# EVENTS
-# ============================================================================
+def load_state() -> dict[str, Any]:
+    """Backward-compatible alias for load_project_state()."""
+
+    if not STATE_FILE.exists():
+        return {}
+
+    return load_json(STATE_FILE)
+
 
 def load_events() -> list[dict[str, Any]]:
-    """Load monitoring events."""
+    """Load monitoring events, newest first.
 
-    event_path = find_first_existing(EVENT_CANDIDATES)
+    EVENT_FILE is checked first so monkeypatch-based tests remain
+    compatible with the dashboard's original interface.
+    """
 
-    if event_path is None:
+    event_path = EVENT_FILE
+
+    if not event_path.exists():
+        event_path = find_first_existing(EVENT_CANDIDATES)
+
+    if event_path is None or not event_path.exists():
         return []
 
-    return load_jsonl(event_path)
+    return load_jsonl(event_path)[::-1]
 
 
 def get_recent_events(
     events: list[dict[str, Any]],
     limit: int = 10,
 ) -> list[dict[str, Any]]:
-    """Return recent events."""
+    """Return newest events first."""
 
-    return events[-limit:][::-1]
+    return list(reversed(events[-limit:]))
 
 
 # ============================================================================
@@ -214,7 +240,7 @@ def get_value(
     keys: list[str],
     default: Any = None,
 ) -> Any:
-    """Get the first matching dictionary value."""
+    """Return the first matching dictionary value."""
 
     for key in keys:
         if key in data:
@@ -224,7 +250,7 @@ def get_value(
 
 
 def normalize_progress(value: Any) -> float:
-    """Normalize progress to 0–100."""
+    """Normalize progress to the 0–100 range."""
 
     try:
         progress = float(value)
@@ -268,18 +294,18 @@ def run_command(
 
 
 def get_git_info() -> dict[str, str]:
-    """Get Git branch, commit, and status."""
+    """Return Git branch, commit, and status."""
 
     branch_code, branch, branch_error = run_command(
-        ["git", "branch", "--show-current"]
+        ["git", "branch", "--show-current"],
     )
 
     commit_code, commit, commit_error = run_command(
-        ["git", "rev-parse", "--short", "HEAD"]
+        ["git", "rev-parse", "--short", "HEAD"],
     )
 
     status_code, status, status_error = run_command(
-        ["git", "status", "--short", "--branch"]
+        ["git", "status", "--short", "--branch"],
     )
 
     return {
@@ -301,12 +327,22 @@ def get_git_info() -> dict[str, str]:
     }
 
 
+def git_info() -> dict[str, str]:
+    """
+    Backward-compatible Git information API.
+
+    Existing tests and older monitoring components expect this name.
+    """
+
+    return get_git_info()
+
+
 # ============================================================================
 # VALIDATION
 # ============================================================================
 
 def run_pytest() -> tuple[bool, str]:
-    """Run pytest."""
+    """Run the full pytest suite."""
 
     code, stdout, stderr = run_command(
         [sys.executable, "-m", "pytest", "-q"],
@@ -317,7 +353,7 @@ def run_pytest() -> tuple[bool, str]:
 
 
 def run_ruff() -> tuple[bool, str]:
-    """Run Ruff."""
+    """Run Ruff against the repository."""
 
     code, stdout, stderr = run_command(
         [sys.executable, "-m", "ruff", "check", "."],
@@ -328,7 +364,7 @@ def run_ruff() -> tuple[bool, str]:
 
 
 def run_foundation() -> tuple[bool, str]:
-    """Run Einstein AI V2 foundation."""
+    """Run the Einstein AI V2 foundation."""
 
     code, stdout, stderr = run_command(
         [sys.executable, "einstein_v2.py"],
@@ -339,48 +375,23 @@ def run_foundation() -> tuple[bool, str]:
 
 
 # ============================================================================
-# EVENT FORMATTING
-# ============================================================================
-
-def format_event(event: dict[str, Any]) -> str:
-    """Format an event for display."""
-
-    timestamp = get_value(
-        event,
-        ["timestamp", "time", "created_at", "datetime"],
-        "",
-    )
-
-    event_type = get_value(
-        event,
-        ["event_type", "type", "event", "action"],
-        "event",
-    )
-
-    message = get_value(
-        event,
-        ["message", "description", "details"],
-        "",
-    )
-
-    return f"{timestamp} — {event_type} — {message}"
-
-
-# ============================================================================
 # HEADER
 # ============================================================================
 
 def render_header() -> None:
-    """Render the main header."""
+    """Render the owner command center header."""
 
     st.markdown(
-        '<div class="dashboard-title">🧠 Einstein AI V2</div>',
+        '<div class="dashboard-title">'
+        "🧠 EINSTEIN AI V2 — OWNER COMMAND CENTER"
+        "</div>",
         unsafe_allow_html=True,
     )
 
     st.markdown(
         '<div class="dashboard-subtitle">'
-        "Owner Monitoring & Engineering Control Dashboard"
+        "Private engineering control center • "
+        "Project state • Progress • Git • Tests • Monitoring"
         "</div>",
         unsafe_allow_html=True,
     )
@@ -394,28 +405,13 @@ def render_sidebar() -> None:
     """Render owner controls."""
 
     st.sidebar.title("Owner Controls")
-
-    st.sidebar.caption(
-        "Einstein AI V2 monitoring system"
-    )
+    st.sidebar.caption("Einstein AI V2 monitoring system")
 
     if st.sidebar.button(
         "🔄 Refresh Dashboard",
         use_container_width=True,
     ):
         st.rerun()
-
-    st.sidebar.divider()
-
-    st.sidebar.subheader("Project")
-
-    st.sidebar.write(
-        f"**Root:** `{PROJECT_ROOT}`"
-    )
-
-    st.sidebar.write(
-        f"**Monitor:** `{MONITOR_DIR}`"
-    )
 
     st.sidebar.divider()
 
@@ -429,6 +425,7 @@ def render_sidebar() -> None:
             passed, output = run_pytest()
 
         st.session_state["pytest_output"] = output
+        st.session_state["pytest_passed"] = passed
 
         if passed:
             st.sidebar.success("Pytest: PASS")
@@ -443,6 +440,7 @@ def render_sidebar() -> None:
             passed, output = run_ruff()
 
         st.session_state["ruff_output"] = output
+        st.session_state["ruff_passed"] = passed
 
         if passed:
             st.sidebar.success("Ruff: PASS")
@@ -453,10 +451,11 @@ def render_sidebar() -> None:
         "▶ Run Einstein V2",
         use_container_width=True,
     ):
-        with st.spinner("Running foundation..."):
+        with st.spinner("Running Einstein AI V2..."):
             passed, output = run_foundation()
 
         st.session_state["foundation_output"] = output
+        st.session_state["foundation_passed"] = passed
 
         if passed:
             st.sidebar.success("Foundation: PASS")
@@ -471,14 +470,19 @@ def render_sidebar() -> None:
 def render_project_overview(
     state: dict[str, Any],
 ) -> None:
-    """Render project metrics."""
+    """Render high-level project metrics."""
 
     progress = normalize_progress(
         get_value(
             state,
-            ["progress", "progress_percent", "completion"],
+            [
+                "progress",
+                "progress_percent",
+                "overall_progress",
+                "completion",
+            ],
             0,
-        )
+        ),
     )
 
     status = get_value(
@@ -490,18 +494,24 @@ def render_project_overview(
     phase = get_value(
         state,
         ["phase", "current_phase", "stage"],
+        "Monitoring System",
+    )
+
+    step = get_value(
+        state,
+        ["step", "current_step"],
         "Unknown",
     )
 
     version = get_value(
         state,
         ["version", "project_version"],
-        "Unknown",
+        "0.1.0",
     )
 
     st.subheader("Project Overview")
 
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
 
     with col1:
         st.metric("Status", str(status))
@@ -510,9 +520,12 @@ def render_project_overview(
         st.metric("Version", str(version))
 
     with col3:
-        st.metric("Current Phase", str(phase))
+        st.metric("Phase", str(phase))
 
     with col4:
+        st.metric("Step", str(step))
+
+    with col5:
         st.metric("Progress", f"{progress:.1f}%")
 
     st.progress(progress / 100.0)
@@ -525,7 +538,11 @@ def render_project_overview(
 def render_git_status() -> None:
     """Render Git repository information."""
 
-    git = get_git_info()
+    git = git_info()
+
+    st.subheader("SYSTEM TELEMETRY")
+
+    st.caption("Live repository and engineering telemetry")
 
     st.subheader("Git Repository")
 
@@ -543,7 +560,7 @@ def render_git_status() -> None:
             git["commit"] or "Unknown",
         )
 
-    with st.expander("Git Status"):
+    with st.expander("Git Status", expanded=False):
         st.code(
             git["status"],
             language="text",
@@ -554,10 +571,34 @@ def render_git_status() -> None:
 # EVENTS
 # ============================================================================
 
+def format_event(event: dict[str, Any]) -> str:
+    """Format a monitoring event."""
+
+    timestamp = get_value(
+        event,
+        ["timestamp", "time", "created_at", "datetime"],
+        "Unknown time",
+    )
+
+    event_type = get_value(
+        event,
+        ["event_type", "type", "event", "action"],
+        "EVENT",
+    )
+
+    message = get_value(
+        event,
+        ["message", "description", "details"],
+        "",
+    )
+
+    return f"{timestamp} — {event_type} — {message}"
+
+
 def render_events(
     events: list[dict[str, Any]],
 ) -> None:
-    """Render monitoring events."""
+    """Render recent monitoring events."""
 
     st.subheader("Monitoring Events")
 
@@ -568,13 +609,13 @@ def render_events(
 
     if not recent_events:
         st.info(
-            "No monitoring events have been recorded yet."
+            "No monitoring events have been recorded yet.",
         )
         return
 
     for event in recent_events:
         st.markdown(
-            f'<div class="dashboard-card">'
+            '<div class="dashboard-card">'
             f"{format_event(event)}"
             "</div>",
             unsafe_allow_html=True,
@@ -586,21 +627,39 @@ def render_events(
 # ============================================================================
 
 def render_validation_results() -> None:
-    """Render validation output."""
+    """Render validation outputs."""
 
-    st.subheader("Validation Results")
+    st.subheader("Engineering Validation")
 
-    pytest_output = st.session_state.get(
-        "pytest_output"
-    )
+    pytest_output = st.session_state.get("pytest_output")
+    ruff_output = st.session_state.get("ruff_output")
+    foundation_output = st.session_state.get("foundation_output")
 
-    ruff_output = st.session_state.get(
-        "ruff_output"
-    )
+    col1, col2, col3 = st.columns(3)
 
-    foundation_output = st.session_state.get(
-        "foundation_output"
-    )
+    with col1:
+        if st.session_state.get("pytest_passed") is True:
+            st.success("Pytest PASS")
+        elif st.session_state.get("pytest_passed") is False:
+            st.error("Pytest FAIL")
+        else:
+            st.info("Pytest not run")
+
+    with col2:
+        if st.session_state.get("ruff_passed") is True:
+            st.success("Ruff PASS")
+        elif st.session_state.get("ruff_passed") is False:
+            st.error("Ruff FAIL")
+        else:
+            st.info("Ruff not run")
+
+    with col3:
+        if st.session_state.get("foundation_passed") is True:
+            st.success("Foundation PASS")
+        elif st.session_state.get("foundation_passed") is False:
+            st.error("Foundation FAIL")
+        else:
+            st.info("Foundation not run")
 
     if pytest_output:
         with st.expander("Pytest Output"):
@@ -623,25 +682,13 @@ def render_validation_results() -> None:
                 language="text",
             )
 
-    if not any(
-        [
-            pytest_output,
-            ruff_output,
-            foundation_output,
-        ]
-    ):
-        st.info(
-            "Use the validation controls in the sidebar "
-            "to run project checks."
-        )
-
 
 # ============================================================================
 # PROJECT FILES
 # ============================================================================
 
 def render_project_files() -> None:
-    """Display important project files."""
+    """Display important Einstein AI V2 files."""
 
     st.subheader("Project Structure")
 
@@ -673,7 +720,7 @@ def render_project_files() -> None:
                     if path.exists()
                     else "MISSING"
                 ),
-            }
+            },
         )
 
     st.dataframe(
@@ -705,7 +752,7 @@ def render_footer() -> None:
 # ============================================================================
 
 def render_dashboard() -> None:
-    """Render the complete owner dashboard."""
+    """Render the complete owner command center."""
 
     inject_theme()
     render_sidebar()
@@ -734,10 +781,6 @@ def render_dashboard() -> None:
 
     render_footer()
 
-
-# ============================================================================
-# ENTRY POINT
-# ============================================================================
 
 if __name__ == "__main__":
     render_dashboard()
