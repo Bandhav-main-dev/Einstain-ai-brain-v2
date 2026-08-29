@@ -1,393 +1,92 @@
+"""
+Einstein AI V2 — Owner Monitoring Dashboard
+
+Run from the repository root:
+
+    streamlit run monitor/owner_dashboard.py
+"""
+
 from __future__ import annotations
 
 import json
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 import streamlit as st
 
-from .auth import login_form, logout, require_role
+# ============================================================================
+# PROJECT PATHS
+# ============================================================================
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-STATE_FILE = PROJECT_ROOT / "logs" / "project_state.json"
-EVENT_FILE = PROJECT_ROOT / "logs" / "project_events.jsonl"
+MONITOR_DIR = PROJECT_ROOT / "monitor"
+
+STATE_CANDIDATES = [
+    PROJECT_ROOT / "project_state.json",
+    MONITOR_DIR / "project_state.json",
+    PROJECT_ROOT / "data" / "project_state.json",
+]
+
+EVENT_CANDIDATES = [
+    PROJECT_ROOT / "audit_events.jsonl",
+    PROJECT_ROOT / "monitoring_events.jsonl",
+    MONITOR_DIR / "audit_events.jsonl",
+    MONITOR_DIR / "monitoring_events.jsonl",
+]
 
 
-def load_state() -> dict[str, Any]:
-    """Load current Einstein AI V2 project state."""
-    if not STATE_FILE.exists():
-        return {}
+# ============================================================================
+# STREAMLIT CONFIGURATION
+# ============================================================================
 
-    try:
-        return json.loads(STATE_FILE.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return {}
-
-
-def load_events(limit: int = 20) -> list[dict[str, Any]]:
-    """Load the most recent monitoring events."""
-    if not EVENT_FILE.exists():
-        return []
-
-    events: list[dict[str, Any]] = []
-
-    try:
-        lines = EVENT_FILE.read_text(encoding="utf-8").splitlines()
-    except OSError:
-        return []
-
-    for line in lines[-limit:]:
-        try:
-            value = json.loads(line)
-            if isinstance(value, dict):
-                events.append(value)
-        except json.JSONDecodeError:
-            continue
-
-    return list(reversed(events))
+st.set_page_config(
+    page_title="Einstein AI V2 — Owner Dashboard",
+    page_icon="🧠",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
 
-def git_info() -> dict[str, str]:
-    """Return safe read-only Git information."""
-
-    def command(args: list[str]) -> str:
-        try:
-            result = subprocess.run(
-                args,
-                cwd=PROJECT_ROOT,
-                text=True,
-                capture_output=True,
-                check=False,
-            )
-            return result.stdout.strip()
-        except OSError:
-            return ""
-
-    return {
-        "branch": command(["git", "branch", "--show-current"]),
-        "commit": command(["git", "rev-parse", "--short", "HEAD"]),
-        "status": command(["git", "status", "--short"]),
-    }
-
+# ============================================================================
+# THEME
+# ============================================================================
 
 def inject_theme() -> None:
-    """Inject the Soul-Society-inspired dashboard theme."""
+    """Apply the dashboard visual theme."""
 
     st.markdown(
         """
         <style>
-        @import url(
-            'https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700'
-            '&family=Rajdhani:wght@400;500;600;700&display=swap'
-        );
-
-        :root {
-            --ink: #05070c;
-            --night: #080d16;
-            --panel: rgba(12, 18, 30, 0.88);
-            --panel2: rgba(18, 27, 43, 0.82);
-            --line: rgba(190, 205, 230, 0.16);
-            --white: #edf3ff;
-            --muted: #91a0b8;
-            --spirit: #bcd7ff;
-            --ice: #78bfff;
-            --danger: #ff758f;
-            --success: #72e6a5;
-            --gold: #e9c978;
+        .main {
+            padding-top: 1rem;
         }
 
-        .stApp {
-            background:
-                radial-gradient(
-                    circle at 12% 15%,
-                    rgba(76, 136, 255, 0.15),
-                    transparent 28%
-                ),
-                radial-gradient(
-                    circle at 88% 20%,
-                    rgba(176, 211, 255, 0.09),
-                    transparent 25%
-                ),
-                linear-gradient(
-                    135deg,
-                    #03050a 0%,
-                    #07101d 48%,
-                    #03060c 100%
-                );
-            color: var(--white);
-            font-family: 'Rajdhani', sans-serif;
-        }
-
-        .stApp::before {
-            content: "";
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            background:
-                linear-gradient(
-                    120deg,
-                    transparent 0%,
-                    rgba(255,255,255,0.025) 50%,
-                    transparent 100%
-                );
-            animation: spiritSweep 9s linear infinite;
-            z-index: 0;
-        }
-
-        @keyframes spiritSweep {
-            0% {
-                transform: translateX(-40%);
-                opacity: 0.15;
-            }
-            50% {
-                opacity: 0.35;
-            }
-            100% {
-                transform: translateX(40%);
-                opacity: 0.15;
-            }
-        }
-
-        .block-container {
-            max-width: 1500px;
-            padding-top: 1.2rem;
-            padding-bottom: 3rem;
-        }
-
-        .hero {
-            position: relative;
-            overflow: hidden;
-            border: 1px solid var(--line);
-            border-radius: 22px;
-            padding: 28px 34px;
-            background:
-                linear-gradient(
-                    135deg,
-                    rgba(16, 27, 45, 0.95),
-                    rgba(7, 12, 22, 0.92)
-                );
-            box-shadow:
-                0 25px 80px rgba(0, 0, 0, 0.45),
-                inset 0 1px 0 rgba(255,255,255,0.06);
-            margin-bottom: 20px;
-        }
-
-        .hero::after {
-            content: "";
-            position: absolute;
-            width: 280px;
-            height: 280px;
-            right: -120px;
-            top: -120px;
-            border-radius: 50%;
-            border: 1px solid rgba(120,191,255,0.18);
-            box-shadow:
-                0 0 40px rgba(120,191,255,0.08),
-                0 0 100px rgba(120,191,255,0.04);
-            animation: pulseRing 4s ease-in-out infinite;
-        }
-
-        @keyframes pulseRing {
-            0%, 100% {
-                transform: scale(0.92);
-                opacity: 0.45;
-            }
-            50% {
-                transform: scale(1.08);
-                opacity: 0.9;
-            }
-        }
-
-        .hero-kicker {
-            color: var(--gold);
-            text-transform: uppercase;
-            letter-spacing: 0.28em;
-            font-size: 0.78rem;
+        .dashboard-title {
+            font-size: 2.4rem;
             font-weight: 700;
+            margin-bottom: 0.2rem;
         }
 
-        .hero-title {
-            font-family: 'Cinzel', serif;
-            font-size: clamp(2rem, 4vw, 4.2rem);
-            line-height: 1;
-            margin: 10px 0;
-            color: var(--white);
-            text-shadow:
-                0 0 18px rgba(160, 204, 255, 0.22);
+        .dashboard-subtitle {
+            font-size: 1rem;
+            opacity: 0.75;
+            margin-bottom: 1.5rem;
         }
 
-        .hero-subtitle {
-            color: var(--muted);
-            font-size: 1.05rem;
+        .dashboard-card {
+            border: 1px solid rgba(128,128,128,0.25);
+            border-radius: 14px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background: rgba(128,128,128,0.06);
         }
 
-        .status-pill {
-            display: inline-block;
-            padding: 7px 14px;
-            border-radius: 999px;
-            background: rgba(114, 230, 165, 0.09);
-            border: 1px solid rgba(114, 230, 165, 0.28);
-            color: var(--success);
-            font-weight: 700;
-            letter-spacing: 0.08em;
-        }
-
-        .section-title {
-            font-family: 'Cinzel', serif;
-            color: var(--spirit);
-            letter-spacing: 0.08em;
-            font-size: 1.15rem;
-            margin: 18px 0 12px;
-        }
-
-        .metric-card {
-            border: 1px solid var(--line);
-            border-radius: 17px;
-            padding: 18px;
-            min-height: 118px;
-            background: linear-gradient(
-                145deg,
-                rgba(20, 31, 49, 0.86),
-                rgba(7, 12, 22, 0.88)
-            );
-            transition:
-                transform 0.25s ease,
-                border-color 0.25s ease,
-                box-shadow 0.25s ease;
-        }
-
-        .metric-card:hover {
-            transform: translateY(-4px);
-            border-color: rgba(120,191,255,0.36);
-            box-shadow: 0 15px 45px rgba(0,0,0,0.28);
-        }
-
-        .metric-label {
-            color: var(--muted);
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: 0.14em;
-        }
-
-        .metric-value {
-            font-family: 'Cinzel', serif;
-            color: var(--white);
-            font-size: 2rem;
-            margin-top: 7px;
-        }
-
-        .metric-detail {
-            color: var(--muted);
-            font-size: 0.85rem;
-        }
-
-        .panel {
-            border: 1px solid var(--line);
-            border-radius: 18px;
-            padding: 20px;
-            background: var(--panel);
-            box-shadow: 0 18px 55px rgba(0,0,0,0.22);
-        }
-
-        .event {
-            border-left: 2px solid rgba(120,191,255,0.4);
-            padding: 10px 14px;
-            margin-bottom: 10px;
-            background: rgba(255,255,255,0.025);
-            border-radius: 0 10px 10px 0;
-        }
-
-        .event-type {
-            color: var(--ice);
-            font-weight: 700;
+        .small-text {
             font-size: 0.8rem;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-        }
-
-        .event-message {
-            color: var(--white);
-            margin-top: 3px;
-        }
-
-        .event-time {
-            color: var(--muted);
-            font-size: 0.75rem;
-        }
-
-        .timeline-item {
-            position: relative;
-            padding: 13px 16px 13px 28px;
-            border-left: 1px solid rgba(120,191,255,0.22);
-            margin-left: 8px;
-        }
-
-        .timeline-item::before {
-            content: "";
-            position: absolute;
-            left: -5px;
-            top: 17px;
-            width: 9px;
-            height: 9px;
-            border-radius: 50%;
-            background: var(--ice);
-            box-shadow: 0 0 15px rgba(120,191,255,0.55);
-        }
-
-        .timeline-complete::before {
-            background: var(--success);
-            box-shadow: 0 0 15px rgba(114,230,165,0.55);
-        }
-
-        .stButton > button {
-            border-radius: 12px;
-            border: 1px solid rgba(120,191,255,0.28);
-            background: rgba(120,191,255,0.07);
-            color: var(--white);
-            font-family: 'Rajdhani', sans-serif;
-            font-weight: 700;
-            transition: all 0.2s ease;
-        }
-
-        .stButton > button:hover {
-            transform: translateY(-2px);
-            border-color: rgba(120,191,255,0.55);
-            box-shadow: 0 10px 28px rgba(0,0,0,0.25);
-        }
-
-        [data-testid="stSidebar"] {
-            background:
-                linear-gradient(
-                    180deg,
-                    rgba(5, 9, 17, 0.98),
-                    rgba(8, 15, 26, 0.98)
-                );
-            border-right: 1px solid var(--line);
-        }
-
-        [data-testid="stSidebar"] h1,
-        [data-testid="stSidebar"] h2,
-        [data-testid="stSidebar"] h3 {
-            font-family: 'Cinzel', serif;
-        }
-
-        .small-note {
-            color: var(--muted);
-            font-size: 0.82rem;
-        }
-
-        .danger {
-            color: var(--danger);
-        }
-
-        .success {
-            color: var(--success);
-        }
-
-        .gold {
-            color: var(--gold);
+            opacity: 0.7;
         }
         </style>
         """,
@@ -395,473 +94,650 @@ def inject_theme() -> None:
     )
 
 
-def metric_card(
-    label: str,
-    value: str,
-    detail: str = "",
-) -> None:
-    st.markdown(
-        f"""
-        <div class="metric-card">
-            <div class="metric-label">{label}</div>
-            <div class="metric-value">{value}</div>
-            <div class="metric-detail">{detail}</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+# ============================================================================
+# FILE DISCOVERY
+# ============================================================================
+
+def find_first_existing(paths: list[Path]) -> Path | None:
+    """Return the first existing path."""
+
+    for path in paths:
+        if path.exists():
+            return path
+
+    return None
 
 
-def render_events(events: list[dict[str, Any]]) -> None:
-    if not events:
-        st.markdown(
-            '<div class="small-note">No monitoring events recorded.</div>',
-            unsafe_allow_html=True,
-        )
-        return
+# ============================================================================
+# DATA LOADING
+# ============================================================================
 
-    for event in events:
-        event_type = str(
-            event.get("event_type")
-            or event.get("type")
-            or "event"
-        )
-
-        message = str(
-            event.get("message")
-            or event.get("description")
-            or "Monitoring event"
-        )
-
-        timestamp = str(
-            event.get("timestamp")
-            or event.get("created_at")
-            or ""
-        )
-
-        st.markdown(
-            f"""
-            <div class="event">
-                <div class="event-type">{event_type}</div>
-                <div class="event-message">{message}</div>
-                <div class="event-time">{timestamp}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-
-def render_timeline(state: dict[str, Any]) -> None:
-    completed = state.get("completed_steps", [])
-    active = state.get("active_steps", [])
-
-    items = [
-        ("0.6.1", "Monitoring Core", "Monitoring logging foundation"),
-        ("0.6.2", "Project State + Schema", "State and event contracts"),
-        ("0.6.3", "Progress Engine", "Progress calculation engine"),
-        ("0.6.4", "Owner Dashboard", "Owner monitoring interface"),
-        ("0.6.5", "Professor + Authentication", "Secure professor/test access"),
-        ("0.6.4-U1", "UI Overhaul", "Landscape Soul-Society-inspired interface"),
-    ]
-
-    for phase, title, description in items:
-        if phase in completed:
-            css = "timeline-item timeline-complete"
-            state_text = "COMPLETE"
-        elif phase in active:
-            css = "timeline-item"
-            state_text = "ACTIVE"
-        else:
-            css = "timeline-item"
-            state_text = "PLANNED"
-
-        st.markdown(
-            f"""
-            <div class="{css}">
-                <strong>{phase} — {title}</strong>
-                <div class="small-note">
-                    {state_text} · {description}
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-
-def main() -> None:
-    st.set_page_config(
-        page_title="Einstein AI V2 — Owner Command Center",
-        page_icon="⚔",
-        layout="wide",
-        initial_sidebar_state="expanded",
-    )
-
-    inject_theme()
-
-    if not login_form():
-        return
-
-    if not require_role("owner"):
-        st.error("Owner role required.")
-        return
-
-    state = load_state()
-    events = load_events()
-    git = git_info()
-
-    progress = state.get(
-        "overall_progress",
-        state.get("progress_percent", 0.0),
-    )
+def load_json(path: Path) -> dict[str, Any]:
+    """Load a JSON object."""
 
     try:
-        progress = float(progress)
+        with path.open("r", encoding="utf-8") as handle:
+            data = json.load(handle)
+
+        if isinstance(data, dict):
+            return data
+
+        return {"data": data}
+
+    except (OSError, json.JSONDecodeError) as exc:
+        return {"error": str(exc)}
+
+
+def load_jsonl(path: Path) -> list[dict[str, Any]]:
+    """Load JSON Lines events."""
+
+    events: list[dict[str, Any]] = []
+
+    try:
+        with path.open("r", encoding="utf-8") as handle:
+            for line in handle:
+                line = line.strip()
+
+                if not line:
+                    continue
+
+                try:
+                    value = json.loads(line)
+
+                    if isinstance(value, dict):
+                        events.append(value)
+
+                except json.JSONDecodeError:
+                    continue
+
+    except OSError:
+        return []
+
+    return events
+
+
+# ============================================================================
+# PROJECT STATE
+# ============================================================================
+
+def load_project_state() -> dict[str, Any]:
+    """Load project state with a safe fallback."""
+
+    state_path = find_first_existing(STATE_CANDIDATES)
+
+    if state_path is not None:
+        state = load_json(state_path)
+
+        if "error" not in state:
+            return state
+
+    return {
+        "project": "Einstein AI V2",
+        "version": "0.1.0",
+        "status": "ACTIVE",
+        "phase": "Monitoring System",
+        "progress": 0,
+        "state_source": "live fallback",
+    }
+
+
+# ============================================================================
+# EVENTS
+# ============================================================================
+
+def load_events() -> list[dict[str, Any]]:
+    """Load monitoring events."""
+
+    event_path = find_first_existing(EVENT_CANDIDATES)
+
+    if event_path is None:
+        return []
+
+    return load_jsonl(event_path)
+
+
+def get_recent_events(
+    events: list[dict[str, Any]],
+    limit: int = 10,
+) -> list[dict[str, Any]]:
+    """Return recent events."""
+
+    return events[-limit:][::-1]
+
+
+# ============================================================================
+# HELPERS
+# ============================================================================
+
+def get_value(
+    data: dict[str, Any],
+    keys: list[str],
+    default: Any = None,
+) -> Any:
+    """Get the first matching dictionary value."""
+
+    for key in keys:
+        if key in data:
+            return data[key]
+
+    return default
+
+
+def normalize_progress(value: Any) -> float:
+    """Normalize progress to 0–100."""
+
+    try:
+        progress = float(value)
     except (TypeError, ValueError):
-        progress = 0.0
+        return 0.0
 
-    progress = max(0.0, min(100.0, progress))
+    if 0 <= progress <= 1:
+        progress *= 100
 
-    status = str(state.get("status", "UNKNOWN"))
-    phase = str(state.get("current_phase", "N/A"))
-    step = str(state.get("current_step", "N/A"))
-    tests_passed = int(state.get("tests_passed", 0) or 0)
-    tests_failed = int(state.get("tests_failed", 0) or 0)
-    warnings = int(state.get("warnings", 0) or 0)
-    errors = int(state.get("errors", 0) or 0)
+    return max(0.0, min(100.0, progress))
 
-    # ------------------------------------------------------------------
-    # SIDEBAR
-    # ------------------------------------------------------------------
 
-    with st.sidebar:
-        st.markdown(
-            """
-            <div class="section-title">OWNER CONTROL</div>
-            """,
-            unsafe_allow_html=True,
+# ============================================================================
+# GIT
+# ============================================================================
+
+def run_command(
+    command: list[str],
+    timeout: int = 30,
+) -> tuple[int, str, str]:
+    """Run a command from the project root."""
+
+    try:
+        result = subprocess.run(
+            command,
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
         )
 
-        st.markdown(
-            '<div class="status-pill">● COMMAND CENTER ONLINE</div>',
-            unsafe_allow_html=True,
+        return (
+            result.returncode,
+            result.stdout.strip(),
+            result.stderr.strip(),
         )
 
-        st.write("")
+    except (OSError, subprocess.SubprocessError) as exc:
+        return 1, "", str(exc)
 
-        if st.button("↻ Refresh Dashboard", use_container_width=True):
-            st.rerun()
 
-        if st.button("⟳ Rerun Test Suite", use_container_width=True):
-            st.session_state["request_test_run"] = True
-            st.rerun()
+def get_git_info() -> dict[str, str]:
+    """Get Git branch, commit, and status."""
 
-        st.markdown("---")
+    branch_code, branch, branch_error = run_command(
+        ["git", "branch", "--show-current"]
+    )
 
-        st.markdown("### Project")
-        st.write("Einstein AI V2")
+    commit_code, commit, commit_error = run_command(
+        ["git", "rev-parse", "--short", "HEAD"]
+    )
 
-        st.markdown("### Branch")
-        st.code(git["branch"] or "unknown")
+    status_code, status, status_error = run_command(
+        ["git", "status", "--short", "--branch"]
+    )
 
-        st.markdown("### Commit")
-        st.code(git["commit"] or "unknown")
+    return {
+        "branch": (
+            branch
+            if branch_code == 0
+            else f"Unavailable: {branch_error}"
+        ),
+        "commit": (
+            commit
+            if commit_code == 0
+            else f"Unavailable: {commit_error}"
+        ),
+        "status": (
+            status
+            if status_code == 0
+            else f"Unavailable: {status_error}"
+        ),
+    }
 
-        st.markdown("---")
 
-        if st.button("Logout", use_container_width=True):
-            logout()
-            st.rerun()
+# ============================================================================
+# VALIDATION
+# ============================================================================
 
-        st.markdown(
-            """
-            <div class="small-note">
-                Owner-level monitoring controls.<br>
-                Read-only project telemetry unless explicitly enabled
-                by the monitoring layer.
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+def run_pytest() -> tuple[bool, str]:
+    """Run pytest."""
 
-    # ------------------------------------------------------------------
-    # HERO
-    # ------------------------------------------------------------------
+    code, stdout, stderr = run_command(
+        [sys.executable, "-m", "pytest", "-q"],
+        timeout=120,
+    )
+
+    return code == 0, stdout or stderr
+
+
+def run_ruff() -> tuple[bool, str]:
+    """Run Ruff."""
+
+    code, stdout, stderr = run_command(
+        [sys.executable, "-m", "ruff", "check", "."],
+        timeout=120,
+    )
+
+    return code == 0, stdout or stderr
+
+
+def run_foundation() -> tuple[bool, str]:
+    """Run Einstein AI V2 foundation."""
+
+    code, stdout, stderr = run_command(
+        [sys.executable, "einstein_v2.py"],
+        timeout=120,
+    )
+
+    return code == 0, stdout or stderr
+
+
+# ============================================================================
+# EVENT FORMATTING
+# ============================================================================
+
+def format_event(event: dict[str, Any]) -> str:
+    """Format an event for display."""
+
+    timestamp = get_value(
+        event,
+        ["timestamp", "time", "created_at", "datetime"],
+        "",
+    )
+
+    event_type = get_value(
+        event,
+        ["event_type", "type", "event", "action"],
+        "event",
+    )
+
+    message = get_value(
+        event,
+        ["message", "description", "details"],
+        "",
+    )
+
+    return f"{timestamp} — {event_type} — {message}"
+
+
+# ============================================================================
+# HEADER
+# ============================================================================
+
+def render_header() -> None:
+    """Render the main header."""
 
     st.markdown(
-        f"""
-        <div class="hero">
-            <div class="hero-kicker">
-                Einstein AI V2 · Monitoring Division
-            </div>
-
-            <div class="hero-title">
-                OWNER COMMAND CENTER
-            </div>
-
-            <div class="hero-subtitle">
-                A high-visibility monitoring interface for the AI research
-                system — inspired by a Soul-Society command architecture.
-            </div>
-
-            <div style="margin-top:18px;">
-                <span class="status-pill">
-                    ● {status}
-                </span>
-                <span style="margin-left:12px;color:#91a0b8;">
-                    Phase {phase} · {step}
-                </span>
-            </div>
-        </div>
-        """,
+        '<div class="dashboard-title">🧠 Einstein AI V2</div>',
         unsafe_allow_html=True,
     )
 
-    # ------------------------------------------------------------------
-    # TOP METRICS
-    # ------------------------------------------------------------------
-
     st.markdown(
-        '<div class="section-title">SYSTEM TELEMETRY</div>',
+        '<div class="dashboard-subtitle">'
+        "Owner Monitoring & Engineering Control Dashboard"
+        "</div>",
         unsafe_allow_html=True,
     )
 
-    columns = st.columns(6)
 
-    with columns[0]:
-        metric_card("Overall Progress", f"{progress:.1f}%", "Research path")
+# ============================================================================
+# SIDEBAR
+# ============================================================================
 
-    with columns[1]:
-        metric_card("Current Phase", phase, "Active phase")
+def render_sidebar() -> None:
+    """Render owner controls."""
 
-    with columns[2]:
-        metric_card("Tests Passed", str(tests_passed), "Validation")
+    st.sidebar.title("Owner Controls")
 
-    with columns[3]:
-        metric_card("Tests Failed", str(tests_failed), "Validation")
+    st.sidebar.caption(
+        "Einstein AI V2 monitoring system"
+    )
 
-    with columns[4]:
-        metric_card("Warnings", str(warnings), "Monitoring")
+    if st.sidebar.button(
+        "🔄 Refresh Dashboard",
+        use_container_width=True,
+    ):
+        st.rerun()
 
-    with columns[5]:
-        metric_card("Errors", str(errors), "Critical")
+    st.sidebar.divider()
 
-    st.write("")
+    st.sidebar.subheader("Project")
 
-    # ------------------------------------------------------------------
-    # PROGRESS
-    # ------------------------------------------------------------------
+    st.sidebar.write(
+        f"**Root:** `{PROJECT_ROOT}`"
+    )
 
-    left, right = st.columns([1.55, 1])
+    st.sidebar.write(
+        f"**Monitor:** `{MONITOR_DIR}`"
+    )
 
-    with left:
-        st.markdown(
-            '<div class="section-title">RESEARCH PROGRESS</div>',
-            unsafe_allow_html=True,
-        )
+    st.sidebar.divider()
 
-        st.markdown('<div class="panel">', unsafe_allow_html=True)
+    st.sidebar.subheader("Validation")
 
-        st.markdown(
-            f"""
-            <div style="display:flex;justify-content:space-between;">
-                <strong>Engineering Progress</strong>
-                <strong>{progress:.1f}%</strong>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+    if st.sidebar.button(
+        "🧪 Run Tests",
+        use_container_width=True,
+    ):
+        with st.spinner("Running pytest..."):
+            passed, output = run_pytest()
 
-        st.progress(progress / 100.0)
+        st.session_state["pytest_output"] = output
 
-        st.markdown(
-            f"""
-            <div class="small-note">
-                Active phase: {phase}<br>
-                Current operation: {step}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with right:
-        st.markdown(
-            '<div class="section-title">GIT STATUS</div>',
-            unsafe_allow_html=True,
-        )
-
-        st.markdown('<div class="panel">', unsafe_allow_html=True)
-
-        branch = git["branch"] or "unknown"
-        commit = git["commit"] or "unknown"
-
-        if git["status"]:
-            git_state = "MODIFIED"
-            git_class = "danger"
+        if passed:
+            st.sidebar.success("Pytest: PASS")
         else:
-            git_state = "CLEAN"
-            git_class = "success"
+            st.sidebar.error("Pytest: FAIL")
 
-        st.markdown(
-            f"""
-            <div>
-                <div class="small-note">BRANCH</div>
-                <strong>{branch}</strong>
-            </div>
-            <br>
-            <div>
-                <div class="small-note">COMMIT</div>
-                <code>{commit}</code>
-            </div>
-            <br>
-            <div class="{git_class}">
-                ● WORKTREE {git_state}
-            </div>
-            """,
-            unsafe_allow_html=True,
+    if st.sidebar.button(
+        "🔎 Run Ruff",
+        use_container_width=True,
+    ):
+        with st.spinner("Running Ruff..."):
+            passed, output = run_ruff()
+
+        st.session_state["ruff_output"] = output
+
+        if passed:
+            st.sidebar.success("Ruff: PASS")
+        else:
+            st.sidebar.error("Ruff: FAIL")
+
+    if st.sidebar.button(
+        "▶ Run Einstein V2",
+        use_container_width=True,
+    ):
+        with st.spinner("Running foundation..."):
+            passed, output = run_foundation()
+
+        st.session_state["foundation_output"] = output
+
+        if passed:
+            st.sidebar.success("Foundation: PASS")
+        else:
+            st.sidebar.error("Foundation: FAIL")
+
+
+# ============================================================================
+# PROJECT OVERVIEW
+# ============================================================================
+
+def render_project_overview(
+    state: dict[str, Any],
+) -> None:
+    """Render project metrics."""
+
+    progress = normalize_progress(
+        get_value(
+            state,
+            ["progress", "progress_percent", "completion"],
+            0,
         )
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    # ------------------------------------------------------------------
-    # LOWER LANDSCAPE AREA
-    # ------------------------------------------------------------------
-
-    left, center, right = st.columns([1.15, 1.35, 1])
-
-    with left:
-        st.markdown(
-            '<div class="section-title">PHASE TIMELINE</div>',
-            unsafe_allow_html=True,
-        )
-
-        st.markdown('<div class="panel">', unsafe_allow_html=True)
-        render_timeline(state)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with center:
-        st.markdown(
-            '<div class="section-title">EVENT STREAM</div>',
-            unsafe_allow_html=True,
-        )
-
-        st.markdown('<div class="panel">', unsafe_allow_html=True)
-        render_events(events)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with right:
-        st.markdown(
-            '<div class="section-title">OWNER CONTROLS</div>',
-            unsafe_allow_html=True,
-        )
-
-        st.markdown('<div class="panel">', unsafe_allow_html=True)
-
-        st.write("Dashboard controls")
-
-        auto_refresh = st.toggle(
-            "Auto-refresh mode",
-            value=False,
-        )
-
-        event_limit = st.slider(
-            "Events displayed",
-            min_value=5,
-            max_value=50,
-            value=20,
-            step=5,
-        )
-
-        events = load_events(limit=event_limit)
-
-        if st.button(
-            "Reload Event Stream",
-            use_container_width=True,
-        ):
-            st.rerun()
-
-        st.markdown("---")
-
-        st.markdown(
-            """
-            <div class="small-note">
-                Auto-refresh is intentionally opt-in.<br><br>
-                Test execution remains controlled so the dashboard
-                cannot accidentally launch arbitrary project commands.
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        if auto_refresh:
-            st.info(
-                "Auto-refresh selected. Use browser refresh or "
-                "the dashboard refresh control."
-            )
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    # ------------------------------------------------------------------
-    # TEST COMMAND
-    # ------------------------------------------------------------------
-
-    if st.session_state.get("request_test_run"):
-        st.session_state["request_test_run"] = False
-
-        st.markdown(
-            '<div class="section-title">TEST EXECUTION</div>',
-            unsafe_allow_html=True,
-        )
-
-        with st.status("Running test suite...", expanded=True) as status_box:
-            result = subprocess.run(
-                [sys.executable, "-m", "pytest", "-q"],
-                cwd=PROJECT_ROOT,
-                text=True,
-                capture_output=True,
-                check=False,
-            )
-
-            if result.stdout:
-                st.code(result.stdout)
-
-            if result.stderr:
-                st.code(result.stderr)
-
-            if result.returncode == 0:
-                status_box.update(
-                    label="Test suite passed",
-                    state="complete",
-                )
-            else:
-                status_box.update(
-                    label="Test suite failed",
-                    state="error",
-                )
-
-    # ------------------------------------------------------------------
-    # FOOTER
-    # ------------------------------------------------------------------
-
-    st.markdown(
-        """
-        <div style="
-            margin-top:32px;
-            padding-top:16px;
-            border-top:1px solid rgba(190,205,230,0.12);
-            color:#687890;
-            text-align:center;
-            font-size:0.8rem;
-        ">
-            EINSTEIN AI V2 · OWNER MONITORING SYSTEM · PHASE 0.6.4-U1
-            <br>
-            Research monitoring interface — not a biological reconstruction claim.
-        </div>
-        """,
-        unsafe_allow_html=True,
     )
 
+    status = get_value(
+        state,
+        ["status", "project_status", "state"],
+        "UNKNOWN",
+    )
+
+    phase = get_value(
+        state,
+        ["phase", "current_phase", "stage"],
+        "Unknown",
+    )
+
+    version = get_value(
+        state,
+        ["version", "project_version"],
+        "Unknown",
+    )
+
+    st.subheader("Project Overview")
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.metric("Status", str(status))
+
+    with col2:
+        st.metric("Version", str(version))
+
+    with col3:
+        st.metric("Current Phase", str(phase))
+
+    with col4:
+        st.metric("Progress", f"{progress:.1f}%")
+
+    st.progress(progress / 100.0)
+
+
+# ============================================================================
+# GIT STATUS
+# ============================================================================
+
+def render_git_status() -> None:
+    """Render Git repository information."""
+
+    git = get_git_info()
+
+    st.subheader("Git Repository")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.metric(
+            "Branch",
+            git["branch"] or "Unknown",
+        )
+
+    with col2:
+        st.metric(
+            "Commit",
+            git["commit"] or "Unknown",
+        )
+
+    with st.expander("Git Status"):
+        st.code(
+            git["status"],
+            language="text",
+        )
+
+
+# ============================================================================
+# EVENTS
+# ============================================================================
+
+def render_events(
+    events: list[dict[str, Any]],
+) -> None:
+    """Render monitoring events."""
+
+    st.subheader("Monitoring Events")
+
+    recent_events = get_recent_events(
+        events,
+        limit=10,
+    )
+
+    if not recent_events:
+        st.info(
+            "No monitoring events have been recorded yet."
+        )
+        return
+
+    for event in recent_events:
+        st.markdown(
+            f'<div class="dashboard-card">'
+            f"{format_event(event)}"
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
+
+# ============================================================================
+# VALIDATION RESULTS
+# ============================================================================
+
+def render_validation_results() -> None:
+    """Render validation output."""
+
+    st.subheader("Validation Results")
+
+    pytest_output = st.session_state.get(
+        "pytest_output"
+    )
+
+    ruff_output = st.session_state.get(
+        "ruff_output"
+    )
+
+    foundation_output = st.session_state.get(
+        "foundation_output"
+    )
+
+    if pytest_output:
+        with st.expander("Pytest Output"):
+            st.code(
+                pytest_output,
+                language="text",
+            )
+
+    if ruff_output:
+        with st.expander("Ruff Output"):
+            st.code(
+                ruff_output,
+                language="text",
+            )
+
+    if foundation_output:
+        with st.expander("Einstein V2 Output"):
+            st.code(
+                foundation_output,
+                language="text",
+            )
+
+    if not any(
+        [
+            pytest_output,
+            ruff_output,
+            foundation_output,
+        ]
+    ):
+        st.info(
+            "Use the validation controls in the sidebar "
+            "to run project checks."
+        )
+
+
+# ============================================================================
+# PROJECT FILES
+# ============================================================================
+
+def render_project_files() -> None:
+    """Display important project files."""
+
+    st.subheader("Project Structure")
+
+    important_files = [
+        "einstein_v2.py",
+        "requirements.txt",
+        "README.md",
+        "monitor/__init__.py",
+        "monitor/owner_dashboard.py",
+        "monitor/professor_dashboard.py",
+        "monitor/auth.py",
+        "monitor/project_state.py",
+        "monitor/progress.py",
+        "monitor/logging_core.py",
+        "tests/test_owner_dashboard.py",
+        "tests/test_professor_dashboard.py",
+    ]
+
+    rows: list[dict[str, str]] = []
+
+    for relative_path in important_files:
+        path = PROJECT_ROOT / relative_path
+
+        rows.append(
+            {
+                "File": relative_path,
+                "Status": (
+                    "PRESENT"
+                    if path.exists()
+                    else "MISSING"
+                ),
+            }
+        )
+
+    st.dataframe(
+        rows,
+        use_container_width=True,
+        hide_index=True,
+    )
+
+
+# ============================================================================
+# FOOTER
+# ============================================================================
+
+def render_footer() -> None:
+    """Render dashboard footer."""
+
+    st.divider()
+
+    now = datetime.now().astimezone()
+
+    st.caption(
+        "Einstein AI V2 Owner Monitoring System • "
+        f"Dashboard time: {now:%Y-%m-%d %H:%M:%S %Z}"
+    )
+
+
+# ============================================================================
+# MAIN DASHBOARD
+# ============================================================================
+
+def render_dashboard() -> None:
+    """Render the complete owner dashboard."""
+
+    inject_theme()
+    render_sidebar()
+    render_header()
+
+    state = load_project_state()
+    events = load_events()
+
+    render_project_overview(state)
+
+    st.divider()
+
+    render_git_status()
+
+    st.divider()
+
+    render_events(events)
+
+    st.divider()
+
+    render_validation_results()
+
+    st.divider()
+
+    render_project_files()
+
+    render_footer()
+
+
+# ============================================================================
+# ENTRY POINT
+# ============================================================================
 
 if __name__ == "__main__":
-    main()
+    render_dashboard()
