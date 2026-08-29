@@ -1,0 +1,173 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+width="1920"
+height="1080"
+viewBox="0 0 1920 1080">
+
+<defs>
+
+  <radialGradient id="bg" cx="75%" cy="35%" r="80%">
+    <stop offset="0%" stop-color="#3a0b0b"/>
+    <stop offset="35%" stop-color="#140808"/>
+    <stop offset="70%" stop-color="#050505"/>
+    <stop offset="100%" stop-color="#000000"/>
+  </radialGradient>
+
+  <linearGradient id="blade"
+      x1="0%" y1="100%"
+      x2="100%" y2="0%">
+    <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
+    <stop offset="42%" stop-color="#ffffff" stop-opacity=".15"/>
+    <stop offset="52%" stop-color="#ffffff" stop-opacity=".95"/>
+    <stop offset="58%" stop-color="#d4af37" stop-opacity=".85"/>
+    <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+  </linearGradient>
+
+  <radialGradient id="goldGlow">
+    <stop offset="0%" stop-color="#d4af37" stop-opacity=".45"/>
+    <stop offset="40%" stop-color="#d4af37" stop-opacity=".12"/>
+    <stop offset="100%" stop-color="#d4af37" stop-opacity="0"/>
+  </radialGradient>
+
+  <linearGradient id="redAura"
+      x1="0%" y1="0%"
+      x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#ff1a1a" stop-opacity="0"/>
+    <stop offset="50%" stop-color="#b30000" stop-opacity=".35"/>
+    <stop offset="100%" stop-color="#ff3333" stop-opacity="0"/>
+  </linearGradient>
+
+  <filter id="glow">
+    <feGaussianBlur stdDeviation="12"/>
+  </filter>
+
+  <filter id="soft">
+    <feGaussianBlur stdDeviation="35"/>
+  </filter>
+
+</defs>
+
+<!-- BLACK COMMAND CENTER BACKGROUND -->
+<rect width="1920" height="1080" fill="#000000"/>
+<rect width="1920" height="1080" fill="url(#bg)"/>
+
+<!-- RED REIATSU -->
+<ellipse
+    cx="1530"
+    cy="250"
+    rx="620"
+    ry="420"
+    fill="url(#redAura)"
+    filter="url(#soft)"/>
+
+<ellipse
+    cx="350"
+    cy="850"
+    rx="600"
+    ry="300"
+    fill="#8b0000"
+    opacity=".12"
+    filter="url(#soft)"/>
+
+<!-- GOLD SPIRIT CORE -->
+<circle
+    cx="1510"
+    cy="270"
+    r="260"
+    fill="url(#goldGlow)"/>
+
+<!-- ZANPAKUTO BLADE -->
+<g transform="rotate(-31 1180 620)">
+
+    <rect
+        x="1070"
+        y="120"
+        width="38"
+        height="870"
+        rx="19"
+        fill="#ffffff"
+        opacity=".12"
+        filter="url(#glow)"/>
+
+    <rect
+        x="1085"
+        y="90"
+        width="8"
+        height="900"
+        fill="url(#blade)"/>
+
+    <rect
+        x="1089"
+        y="90"
+        width="2"
+        height="900"
+        fill="#ffffff"
+        opacity=".95"/>
+
+    <!-- GOLD GUARD -->
+    <ellipse
+        cx="1089"
+        cy="1000"
+        rx="95"
+        ry="18"
+        fill="none"
+        stroke="#d4af37"
+        stroke-width="7"
+        opacity=".85"/>
+
+    <rect
+        x="1082"
+        y="1005"
+        width="14"
+        height="95"
+        rx="7"
+        fill="#d4af37"
+        opacity=".7"/>
+
+</g>
+
+<!-- SPIRIT PARTICLES -->
+<g fill="#ffffff">
+
+  <circle cx="250" cy="210" r="2"/>
+  <circle cx="390" cy="350" r="3"/>
+  <circle cx="520" cy="150" r="2"/>
+  <circle cx="700" cy="280" r="2"/>
+  <circle cx="820" cy="130" r="3"/>
+  <circle cx="980" cy="340" r="2"/>
+  <circle cx="1320" cy="150" r="2"/>
+  <circle cx="1450" cy="460" r="3"/>
+  <circle cx="1660" cy="350" r="2"/>
+  <circle cx="1760" cy="720" r="3"/>
+  <circle cx="1530" cy="820" r="2"/>
+  <circle cx="1240" cy="880" r="3"/>
+  <circle cx="880" cy="760" r="2"/>
+  <circle cx="620" cy="900" r="3"/>
+  <circle cx="300" cy="720" r="2"/>
+
+</g>
+
+<!-- REIATSU RINGS -->
+<g
+    fill="none"
+    stroke="#d4af37"
+    opacity=".12">
+
+  <circle cx="1510" cy="270" r="330"/>
+  <circle cx="1510" cy="270" r="410"/>
+  <circle cx="1510" cy="270" r="500"/>
+
+</g>
+
+<!-- COMMAND GRID -->
+<g
+    stroke="#ffffff"
+    stroke-width="1"
+    opacity=".025">
+
+  <path d="M0 900 L1920 0"/>
+  <path d="M0 1050 L1920 150"/>
+  <path d="M0 750 L1920 -150"/>
+
+</g>
+
+</svg>

@@ -8,6 +8,7 @@ Run from the repository root:
 
 from __future__ import annotations
 
+import base64
 import json
 import subprocess
 import sys
@@ -61,557 +62,406 @@ st.set_page_config(
 # ============================================================================
 
 def inject_theme() -> None:
-    """Apply the Einstein AI V2 Bleach-inspired command-center theme."""
+    """Apply the Zanpakuto-inspired owner command center theme."""
+
+    background_path = (
+        PROJECT_ROOT
+        / "monitor"
+        / "assets"
+        / "zanpakuto_command_center.svg"
+    )
+
+    background_data = ""
+
+    if background_path.exists():
+        encoded = base64.b64encode(
+            background_path.read_bytes()
+        ).decode("ascii")
+
+        background_data = (
+            "data:image/svg+xml;base64,"
+            + encoded
+        )
 
     st.markdown(
-        """
+        f"""
         <style>
 
         /* ================================================================
-           EINSTEIN AI V2 — OWNER COMMAND CENTER
-           Original Bleach-inspired / spiritual-energy aesthetic
-           ================================================================ */
+           ZANPAKUTO COMMAND CENTER
+           BLACK / RED / WHITE / GOLD
+        ================================================================ */
 
-        @import url(
-            'https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap'
-        );
-
-        /* ----------------------------------------------------------------
-           GLOBAL APPLICATION
-           ---------------------------------------------------------------- */
-
-        .stApp {
+        .stApp {{
             background:
-                radial-gradient(
-                    circle at 15% 10%,
-                    rgba(91, 33, 182, 0.22),
-                    transparent 28%
-                ),
-                radial-gradient(
-                    circle at 85% 5%,
-                    rgba(67, 56, 202, 0.20),
-                    transparent 30%
-                ),
-                radial-gradient(
-                    circle at 50% 100%,
-                    rgba(124, 58, 237, 0.14),
-                    transparent 35%
-                ),
                 linear-gradient(
                     135deg,
-                    #050507 0%,
-                    #09090f 45%,
-                    #050509 100%
-                );
+                    rgba(0,0,0,0.96),
+                    rgba(12,0,0,0.94)
+                ),
+                url("{background_data}");
 
-            color: #f5f3ff;
-            font-family: 'Inter', sans-serif;
-        }
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }}
 
-        .main {
-            padding-top: 0.5rem;
-        }
+        .main {{
+            padding-top: 0.8rem;
+        }}
 
-        .block-container {
+        .block-container {{
             max-width: 1500px;
             padding-top: 1.5rem;
             padding-bottom: 3rem;
-        }
+        }}
 
-        /* ----------------------------------------------------------------
-           SIDEBAR
-           ---------------------------------------------------------------- */
+        /* ================================================================
+           REIATSU ANIMATION
+        ================================================================ */
 
-        [data-testid="stSidebar"] {
-            background:
-                linear-gradient(
-                    180deg,
-                    rgba(8, 8, 14, 0.98),
-                    rgba(13, 10, 22, 0.98)
-                );
+        @keyframes reiatsuPulse {{
+            0%, 100% {{
+                box-shadow:
+                    0 0 8px rgba(212,175,55,0.18),
+                    0 0 24px rgba(180,0,0,0.10);
+            }}
 
-            border-right: 1px solid rgba(139, 92, 246, 0.25);
-            box-shadow:
-                8px 0 35px rgba(0, 0, 0, 0.45);
-        }
+            50% {{
+                box-shadow:
+                    0 0 18px rgba(212,175,55,0.38),
+                    0 0 50px rgba(180,0,0,0.22);
+            }}
+        }}
 
-        [data-testid="stSidebar"] h1,
-        [data-testid="stSidebar"] h2,
-        [data-testid="stSidebar"] h3 {
-            font-family: 'Cinzel', serif;
-            letter-spacing: 0.05em;
-        }
+        @keyframes bladeSweep {{
+            0% {{
+                transform: translateX(-120%);
+                opacity: 0;
+            }}
 
-        /* ----------------------------------------------------------------
+            25% {{
+                opacity: .8;
+            }}
+
+            50% {{
+                opacity: .15;
+            }}
+
+            100% {{
+                transform: translateX(120%);
+                opacity: 0;
+            }}
+        }}
+
+        @keyframes goldPulse {{
+            0%, 100% {{
+                text-shadow:
+                    0 0 4px rgba(212,175,55,.25);
+            }}
+
+            50% {{
+                text-shadow:
+                    0 0 14px rgba(212,175,55,.75);
+            }}
+        }}
+
+        /* ================================================================
            OWNER HEADER
-           ---------------------------------------------------------------- */
+        ================================================================ */
 
-        .owner-hero {
+        .owner-command {{
             position: relative;
             overflow: hidden;
 
-            padding: 2rem 2.2rem;
-            margin-bottom: 1.5rem;
+            border: 1px solid rgba(212,175,55,.38);
+            border-left: 4px solid #d4af37;
 
-            border-radius: 20px;
+            border-radius: 18px;
+
+            padding: 1.6rem 1.8rem;
+            margin-bottom: 1.5rem;
 
             background:
                 linear-gradient(
                     135deg,
-                    rgba(17, 17, 27, 0.97),
-                    rgba(24, 17, 40, 0.92)
+                    rgba(0,0,0,.91),
+                    rgba(55,0,0,.45)
                 );
 
-            border: 1px solid rgba(139, 92, 246, 0.40);
+            animation: reiatsuPulse 4s ease-in-out infinite;
+        }}
 
-            box-shadow:
-                0 0 0 1px rgba(255,255,255,0.02),
-                0 20px 55px rgba(0,0,0,0.45),
-                0 0 45px rgba(124,58,237,0.10);
-        }
-
-        .owner-hero::before {
+        .owner-command::after {{
             content: "";
             position: absolute;
-            left: -20%;
+
             top: 0;
-            width: 70%;
-            height: 2px;
+            left: 0;
+
+            width: 40%;
+            height: 100%;
 
             background:
                 linear-gradient(
                     90deg,
                     transparent,
-                    rgba(196,181,253,0.95),
+                    rgba(255,255,255,.08),
                     transparent
                 );
 
-            box-shadow:
-                0 0 15px rgba(167,139,250,0.90),
-                0 0 35px rgba(124,58,237,0.60);
+            transform: translateX(-120%);
+            animation: bladeSweep 7s linear infinite;
+        }}
 
-            animation: reiatsu-flow 5s linear infinite;
-        }
+        .owner-title {{
+            font-size: 2.65rem;
+            font-weight: 900;
+            letter-spacing: .09em;
 
-        @keyframes reiatsu-flow {
-            0% {
-                transform: translateX(-20%);
-                opacity: 0.25;
-            }
+            color: #ffffff;
 
-            50% {
-                opacity: 1;
-            }
-
-            100% {
-                transform: translateX(190%);
-                opacity: 0.25;
-            }
-        }
-
-        .owner-eyebrow {
-            font-size: 0.72rem;
-            font-weight: 700;
-            letter-spacing: 0.28em;
             text-transform: uppercase;
-            color: #a78bfa;
-            margin-bottom: 0.65rem;
-        }
-
-        .owner-title {
-            font-family: 'Cinzel', serif;
-            font-size: clamp(2rem, 4vw, 3.5rem);
-            font-weight: 800;
-            letter-spacing: 0.08em;
-            line-height: 1.05;
-            color: #faf5ff;
-
-            text-shadow:
-                0 0 10px rgba(196,181,253,0.35),
-                0 0 30px rgba(124,58,237,0.20);
 
             margin: 0;
-        }
+        }}
 
-        .owner-subtitle {
-            margin-top: 0.8rem;
-            color: #aaa3b8;
-            font-size: 0.92rem;
-            letter-spacing: 0.06em;
-        }
+        .owner-title .gold {{
+            color: #d4af37;
+            animation: goldPulse 3s ease-in-out infinite;
+        }}
 
-        .reiatsu-line {
-            height: 1px;
-            margin-top: 1.2rem;
+        .owner-subtitle {{
+            color: rgba(255,255,255,.68);
+            font-size: .92rem;
 
-            background:
-                linear-gradient(
-                    90deg,
-                    transparent,
-                    rgba(167,139,250,0.85),
-                    rgba(255,255,255,0.55),
-                    rgba(167,139,250,0.85),
-                    transparent
-                );
-
-            box-shadow:
-                0 0 12px rgba(139,92,246,0.50);
-        }
-
-        /* ----------------------------------------------------------------
-           SECTION TITLES
-           ---------------------------------------------------------------- */
-
-        .section-title {
-            font-family: 'Cinzel', serif;
-            font-size: 1.15rem;
-            font-weight: 700;
-            letter-spacing: 0.12em;
+            letter-spacing: .16em;
             text-transform: uppercase;
-            color: #ede9fe;
 
-            margin-top: 0.5rem;
-            margin-bottom: 1rem;
-        }
+            margin-top: .5rem;
+        }}
 
-        .section-title::before {
-            content: "◈";
-            color: #a78bfa;
-            margin-right: 0.6rem;
+        .owner-status {{
+            display: inline-block;
 
-            text-shadow:
-                0 0 10px rgba(167,139,250,0.80);
-        }
-
-        /* ----------------------------------------------------------------
-           TELEMETRY CARDS
-           ---------------------------------------------------------------- */
-
-        .telemetry-card {
-            position: relative;
-            min-height: 120px;
-
-            padding: 1.15rem;
-
-            border-radius: 15px;
-
-            background:
-                linear-gradient(
-                    145deg,
-                    rgba(18,18,27,0.95),
-                    rgba(26,20,39,0.86)
-                );
-
-            border: 1px solid rgba(139,92,246,0.23);
-
-            box-shadow:
-                inset 0 1px 0 rgba(255,255,255,0.035),
-                0 10px 30px rgba(0,0,0,0.25);
-
-            transition:
-                transform 0.25s ease,
-                border-color 0.25s ease,
-                box-shadow 0.25s ease;
-        }
-
-        .telemetry-card:hover {
-            transform: translateY(-3px);
-
-            border-color:
-                rgba(167,139,250,0.55);
-
-            box-shadow:
-                0 12px 35px rgba(0,0,0,0.35),
-                0 0 25px rgba(124,58,237,0.12);
-        }
-
-        .telemetry-label {
-            font-size: 0.68rem;
-            font-weight: 700;
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-            color: #8f879e;
-        }
-
-        .telemetry-value {
-            margin-top: 0.45rem;
-
-            font-family: 'Cinzel', serif;
-            font-size: 1.45rem;
-            font-weight: 700;
-
-            color: #f5f3ff;
-
-            text-shadow:
-                0 0 12px rgba(167,139,250,0.20);
-        }
-
-        /* ----------------------------------------------------------------
-           STREAMLIT METRICS
-           ---------------------------------------------------------------- */
-
-        [data-testid="stMetric"] {
-            background:
-                linear-gradient(
-                    145deg,
-                    rgba(18,18,27,0.95),
-                    rgba(26,20,39,0.86)
-                );
-
-            border: 1px solid rgba(139,92,246,0.23);
-            border-radius: 15px;
-
-            padding: 1rem;
-
-            box-shadow:
-                inset 0 1px 0 rgba(255,255,255,0.03),
-                0 10px 30px rgba(0,0,0,0.25);
-        }
-
-        [data-testid="stMetricLabel"] {
-            color: #8f879e !important;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-        }
-
-        [data-testid="stMetricValue"] {
-            color: #f5f3ff !important;
-            font-family: 'Cinzel', serif;
-        }
-
-        /* ----------------------------------------------------------------
-           PROGRESS BAR — REIATSU
-           ---------------------------------------------------------------- */
-
-        [data-testid="stProgress"] {
-            margin-top: 0.8rem;
-            margin-bottom: 1rem;
-        }
-
-        [data-testid="stProgressBar"] {
-            background: rgba(255,255,255,0.06);
-            border-radius: 99px;
-        }
-
-        [data-testid="stProgressBar"] > div {
-            background:
-                linear-gradient(
-                    90deg,
-                    #6d28d9,
-                    #8b5cf6,
-                    #c4b5fd
-                );
-
-            box-shadow:
-                0 0 12px rgba(139,92,246,0.75),
-                0 0 28px rgba(124,58,237,0.30);
-        }
-
-        /* ----------------------------------------------------------------
-           EVENT CARDS
-           ---------------------------------------------------------------- */
-
-        .event-card {
-            position: relative;
-
-            padding: 0.95rem 1.1rem;
-            margin-bottom: 0.7rem;
-
-            border-radius: 12px;
-
-            background:
-                linear-gradient(
-                    90deg,
-                    rgba(20,17,30,0.95),
-                    rgba(13,13,20,0.90)
-                );
-
-            border: 1px solid rgba(139,92,246,0.18);
-            border-left: 3px solid #8b5cf6;
-
-            box-shadow:
-                0 8px 22px rgba(0,0,0,0.22);
-        }
-
-        .event-time {
-            color: #80788c;
-            font-size: 0.72rem;
-            letter-spacing: 0.04em;
-        }
-
-        .event-message {
-            margin-top: 0.25rem;
-            color: #eeeaf7;
-            font-weight: 600;
-        }
-
-        /* ----------------------------------------------------------------
-           STATUS INDICATOR
-           ---------------------------------------------------------------- */
-
-        .system-online {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-
-            padding: 0.35rem 0.7rem;
+            margin-top: 1rem;
+            padding: .35rem .8rem;
 
             border-radius: 999px;
 
-            background: rgba(16,185,129,0.08);
-            border: 1px solid rgba(16,185,129,0.28);
+            border: 1px solid rgba(212,175,55,.5);
 
-            color: #a7f3d0;
+            background: rgba(120,0,0,.28);
 
-            font-size: 0.72rem;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-        }
+            color: #ffffff;
 
-        .system-online::before {
-            content: "";
-            width: 7px;
-            height: 7px;
+            font-size: .72rem;
+            font-weight: 800;
 
-            border-radius: 50%;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+        }}
 
-            background: #34d399;
+        /* ================================================================
+           TELEMETRY
+        ================================================================ */
 
-            box-shadow:
-                0 0 8px rgba(52,211,153,0.90),
-                0 0 16px rgba(52,211,153,0.50);
+        .telemetry-card {{
+            border: 1px solid rgba(212,175,55,.22);
 
-            animation: pulse-online 1.8s ease-in-out infinite;
-        }
+            border-radius: 15px;
 
-        @keyframes pulse-online {
-            0%, 100% {
-                opacity: 0.55;
-                transform: scale(0.85);
-            }
-
-            50% {
-                opacity: 1;
-                transform: scale(1.15);
-            }
-        }
-
-        /* ----------------------------------------------------------------
-           BUTTONS
-           ---------------------------------------------------------------- */
-
-        .stButton > button {
-            border-radius: 10px;
-
-            border: 1px solid rgba(139,92,246,0.30);
+            padding: 1rem 1.1rem;
 
             background:
                 linear-gradient(
-                    135deg,
-                    rgba(91,33,182,0.28),
-                    rgba(30,27,48,0.90)
+                    145deg,
+                    rgba(12,12,12,.92),
+                    rgba(45,0,0,.42)
                 );
 
-            color: #f5f3ff;
-
-            font-weight: 600;
-
             transition:
-                transform 0.2s ease,
-                border-color 0.2s ease,
-                box-shadow 0.2s ease;
-        }
+                transform .25s ease,
+                border-color .25s ease;
 
-        .stButton > button:hover {
-            transform: translateY(-1px);
+            animation: reiatsuPulse 5s ease-in-out infinite;
+        }}
+
+        .telemetry-card:hover {{
+            transform: translateY(-4px);
 
             border-color:
-                rgba(196,181,253,0.65);
+                rgba(212,175,55,.65);
+        }}
 
-            box-shadow:
-                0 0 20px rgba(124,58,237,0.22);
-        }
+        .telemetry-label {{
+            color: rgba(255,255,255,.55);
 
-        /* ----------------------------------------------------------------
-           EXPANDERS
-           ---------------------------------------------------------------- */
+            font-size: .72rem;
 
-        [data-testid="stExpander"] {
-            border: 1px solid rgba(139,92,246,0.20);
-            border-radius: 12px;
-            background: rgba(12,12,18,0.65);
-        }
+            letter-spacing: .13em;
+            text-transform: uppercase;
+        }}
 
-        /* ----------------------------------------------------------------
-           DATAFRAMES
-           ---------------------------------------------------------------- */
+        .telemetry-value {{
+            color: #ffffff;
 
-        [data-testid="stDataFrame"] {
-            border: 1px solid rgba(139,92,246,0.20);
-            border-radius: 12px;
-            overflow: hidden;
-        }
+            font-size: 1.45rem;
+            font-weight: 800;
 
-        /* ----------------------------------------------------------------
-           DIVIDERS
-           ---------------------------------------------------------------- */
+            margin-top: .3rem;
+        }}
 
-        hr {
-            border: 0;
-            height: 1px;
+        .telemetry-gold {{
+            color: #d4af37;
+        }}
+
+        /* ================================================================
+           SYSTEM TELEMETRY
+        ================================================================ */
+
+        .system-telemetry {{
+            border-left: 3px solid #d4af37;
+
+            padding-left: 1rem;
+            margin: 1.5rem 0 1rem;
+
+            color: #ffffff;
+
+            font-weight: 800;
+            letter-spacing: .12em;
+
+            text-transform: uppercase;
+        }}
+
+        /* ================================================================
+           EVENT CARDS
+        ================================================================ */
+
+        .event-card {{
+            position: relative;
+
+            border: 1px solid rgba(255,255,255,.08);
+            border-left: 3px solid #a00000;
+
+            border-radius: 11px;
+
+            padding: .85rem 1rem;
+            margin-bottom: .65rem;
 
             background:
                 linear-gradient(
                     90deg,
-                    transparent,
-                    rgba(139,92,246,0.30),
-                    rgba(255,255,255,0.12),
-                    rgba(139,92,246,0.30),
-                    transparent
+                    rgba(70,0,0,.30),
+                    rgba(8,8,8,.88)
                 );
 
-            margin: 1.4rem 0;
-        }
+            transition: all .25s ease;
+        }}
 
-        /* ----------------------------------------------------------------
-           CAPTIONS / FOOTER
-           ---------------------------------------------------------------- */
+        .event-card:hover {{
+            border-left-color: #d4af37;
 
-        .small-text,
-        [data-testid="stCaptionContainer"] {
-            color: #777080;
-        }
+            transform: translateX(4px);
 
-        /* ----------------------------------------------------------------
-           SCROLLBAR
-           ---------------------------------------------------------------- */
+            box-shadow:
+                0 0 22px rgba(212,175,55,.12);
+        }}
 
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
+        /* ================================================================
+           PROGRESS
+        ================================================================ */
 
-        ::-webkit-scrollbar-track {
-            background: #07070b;
-        }
+        .stProgress > div > div > div > div {{
+            background:
+                linear-gradient(
+                    90deg,
+                    #700000,
+                    #b00000,
+                    #d4af37
+                );
+        }}
 
-        ::-webkit-scrollbar-thumb {
-            background: #31234d;
-            border-radius: 10px;
-        }
+        /* ================================================================
+           SIDEBAR
+        ================================================================ */
 
-        ::-webkit-scrollbar-thumb:hover {
-            background: #6d28d9;
-        }
+        [data-testid="stSidebar"] {{
+            background:
+                linear-gradient(
+                    180deg,
+                    rgba(5,5,5,.98),
+                    rgba(45,0,0,.94)
+                );
+
+            border-right:
+                1px solid rgba(212,175,55,.25);
+        }}
+
+        [data-testid="stSidebar"] h1,
+        [data-testid="stSidebar"] h2,
+        [data-testid="stSidebar"] h3 {{
+            color: #ffffff;
+            letter-spacing: .08em;
+        }}
+
+        /* ================================================================
+           BUTTONS
+        ================================================================ */
+
+        .stButton > button {{
+            border:
+                1px solid rgba(212,175,55,.38);
+
+            border-radius: 9px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(90,0,0,.85),
+                    rgba(15,15,15,.95)
+                );
+
+            color: #ffffff;
+
+            font-weight: 700;
+
+            transition:
+                all .25s ease;
+        }}
+
+        .stButton > button:hover {{
+            border-color: #d4af37;
+
+            box-shadow:
+                0 0 18px rgba(212,175,55,.28);
+
+            transform: translateY(-1px);
+        }}
+
+        /* ================================================================
+           DIVIDERS
+        ================================================================ */
+
+        hr {{
+            border-color:
+                rgba(212,175,55,.18);
+        }}
+
+        /* ================================================================
+           SMALL TEXT
+        ================================================================ */
+
+        .small-text {{
+            color: rgba(255,255,255,.55);
+            font-size: .78rem;
+        }}
 
         </style>
         """,
         unsafe_allow_html=True,
     )
 
-# ============================================================================
-# FILE DISCOVERY
-# ============================================================================
 
 def find_first_existing(paths: list[Path]) -> Path | None:
     """Return the first existing path."""

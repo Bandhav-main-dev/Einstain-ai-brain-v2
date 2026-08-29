@@ -159,3 +159,28 @@ The Einstein AI V2 monitoring Owner Dashboard now includes:
 Phase 0.6.4-U1 is a UI enhancement layer and does not claim biological
 reconstruction of Einstein's brain.
 
+## Phase 0.6.4-U2 — Zanpakuto Owner Command Center
+
+The Owner Dashboard has been upgraded with a custom dark command-center
+visual system inspired by Zanpakuto/reishi aesthetics.
+
+### UI System
+
+- Red / black / white / gold visual palette
+- Custom Zanpakuto-inspired SVG command-center background
+- Animated reiatsu pulse effects
+- Animated blade-light sweep
+- Gold telemetry accents
+- Interactive telemetry cards
+- Enhanced monitoring event cards
+- Owner command-center header
+- Wide landscape Streamlit layout
+- Existing monitoring and validation controls preserved
+
+### Background Asset
+
+- `monitor/assets/zanpakuto_command_center.svg`
+
+The visual system is an original engineering dashboard design and does not
+use copyrighted character artwork.
+
