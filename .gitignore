@@ -57,3 +57,5 @@ logs/*
 
 # Local Colab files
 /content/
+repair_backups/
+*.pyc

@@ -137,3 +137,58 @@ Phase 0.6.5 must pass:
 - Pytest
 - Einstein V2 entry point
 - Streamlit import validation
+
+## Einstein AI V2 — Current Engineering State
+
+### Monitoring Command Center
+
+Einstein AI V2 includes a Streamlit-based Owner Command Center for monitoring engineering progress.
+
+### Current Architecture
+
+- `project_control.json` is the single source of truth.
+- `monitor/progress_engine.py` performs automatic milestone scanning.
+- `monitor/owner_dashboard.py` provides the Owner Command Center.
+- Roadmap progress uses engineering weights.
+- Owner authorization protects write operations.
+- Audit events are recorded in project control data.
+- Viewer mode remains available.
+- The dashboard uses Streamlit components.
+- The visual layer uses an F1-inspired black, red, blue, white and gold theme.
+- Responsive styling and lightweight animations are included.
+
+### Current Weighted Progress
+
+**67.25% weighted engineering progress**
+
+### Roadmap Status
+
+| Stage | Progress | Status |
+|---|---:|---|
+| V2-FOUNDATION | 100% | completed |
+| V2-DATA | 100% | completed |
+| V2-COG | 75% | in_progress |
+| V2-MON | 100% | completed |
+| V2-REASON | 0% | pending |
+| V2-MODEL | 75% | in_progress |
+| V2-EVAL | 25% | in_progress |
+| V2-DEPLOY | 100% | completed |
+
+### Development Workflow
+
+```text
+project_control.json
+        ↓
+progress_engine.py
+        ↓
+Owner Command Center
+        ↓
+Owner authorization
+        ↓
+Audit telemetry
+        ↓
+Git dev branch
+        ↓
+Streamlit deployment
+```
+
